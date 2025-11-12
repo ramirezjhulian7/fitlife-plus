@@ -1,0 +1,8 @@
+/* Global styles */
+:root {
+  --ion-color-primary: #00B050;
+}
+
+html, body, ion-app, ion-content {
+  height: 100%;
+}
