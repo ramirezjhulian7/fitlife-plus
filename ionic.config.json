@@ -1,0 +1,7 @@
+{
+  "name": "fitlife-plus",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
