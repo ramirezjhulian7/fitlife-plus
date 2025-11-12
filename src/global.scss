@@ -34,4 +34,410 @@
 
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import '@ionic/angular/css/palettes/dark.system.css';
+
+/* === FitLife+ Global Tokens & Utilities === */
+
+/* @custom-variant dark (&:is(.dark *)); */
+:root {
+    --font-size: 16px;
+    --background: #ffffff;
+    --foreground: oklch(0.145 0 0);
+    --card: #ffffff;
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: #030213;
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.95 0.0058 264.53);
+    --secondary-foreground: #030213;
+    --muted: #ececf0;
+    --muted-foreground: #717182;
+    --accent: #e9ebef;
+    --accent-foreground: #030213;
+    --destructive: #d4183d;
+    --destructive-foreground: #ffffff;
+    --border: rgba(0, 0, 0, 0.1);
+    --input: transparent;
+    --input-background: #f3f3f5;
+    --switch-background: #cbced4;
+    --font-weight-medium: 500;
+    --font-weight-normal: 400;
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.646 0.222 41.116);
+    --chart-2: oklch(0.6 0.118 184.704);
+    --chart-3: oklch(0.398 0.07 227.392);
+    --chart-4: oklch(0.828 0.189 84.429);
+    --chart-5: oklch(0.769 0.188 70.08);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: #030213;
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+}
+
+/* .dark { ... } dark tokens can be added here if needed */
+:root {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-input-background: var(--input-background);
+}
+
+/* end experimental rules */
+
+/* FitLife visual tokens used by components */
+:root {
+    --fitlife-green: #00B050;
+    --fitlife-green-dark: #009240;
+    --white: #FFFFFF;
+    --gray-600: #555;
+    --gray-500: #777;
+    --gray-400: #AAA;
+    --gray-100: #F5F5F5;
+    --text-dark: #333;
+    --radius-sm: 8px;
+    --btn-height: 44px;
+    --page-padding: 24px;
+    --container-max: 520px;
+    --font-family: 'Inter', 'Roboto', system-ui, -apple-system, 'Segoe UI', Arial;
+}
+
+html {
+    font-family: var(--font-family);
+    font-size: var(--font-size);
+}
+
+body {
+    background: var(--white);
+    color: var(--text-dark);
+}
+
+/* smooth transition for theme changes */
+body { transition: background-color 200ms ease, color 200ms ease; }
+
+/* layout helpers */
+.app-center {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--page-padding);
+}
+
+.container {
+    width: 100%;
+    max-width: var(--container-max);
+    padding: 0 var(--page-padding);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin: 0 auto;
+}
+
+/* Desktop responsive adjustments */
+@media (min-width: 768px) {
+    .container {
+        max-width: 600px;
+        padding: 0 32px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .container {
+        max-width: 480px;
+        padding: 0 24px;
+    }
+}
+
+.container > main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    /* ensure main content stacks title above the form and stays centered */
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* back link */
+.back-link {
+    background: transparent;
+    border: 0;
+    color: var(--gray-600);
+    font-size: 13px;
+    margin-top: 16px;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+/* header */
+.h-title {
+    color: var(--fitlife-green);
+    font-size: 22px;
+    font-weight: 600;
+    margin: 6px 0 0 0;
+    text-align: left;
+    width: 100%;
+}
+
+.h-sub {
+    color: var(--gray-600);
+    font-size: 14px;
+    margin: 6px 0 18px 0;
+    text-align: left;
+    width: 100%;
+}
+
+/* form fields */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+    width: 100%;
+    max-width: 100%;
+}
+
+.field {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+}
+
+.form-field {
+    background: var(--gray-100);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    border: none;
+    --padding-start: 0;
+    --padding-end: 0;
+    --inner-padding-end: 0;
+}
+
+.form-field ion-input {
+    width: 100%;
+    --padding-start: 0;
+    --padding-end: 0;
+}
+
+/* Force full width in case Ionic internal styles override ours */
+.form-field, .form-field ion-input, .checkbox-row, .primary-btn {
+    width: 100%;
+}
+
+/* More specific Ionic selectors to override internal paddings on ion-item */
+ion-item.form-field {
+    --inner-padding-end: 0 !important;
+    --inner-padding-start: 0 !important;
+    --padding-start: 0 !important;
+    --padding-end: 0 !important;
+    padding: 0 !important;
+}
+
+ion-item.form-field ion-input,
+ion-item.form-field input {
+    width: 100% !important;
+}
+
+.form-field ion-input::part(native),
+.form-field input {
+    color: var(--text-dark);
+    font-size: 16px;
+}
+
+.form-field ion-input::part(native)::placeholder,
+.form-field input::placeholder {
+    color: var(--gray-400);
+}
+
+/* help text */
+.help-text {
+    font-size: 12px;
+    color: var(--gray-500);
+    align-self: flex-start;
+    margin-left: 6px;
+}
+
+/* error text */
+.error-text {
+    font-size: 12px;
+    color: #d4183d;
+    align-self: flex-start;
+    margin-left: 6px;
+    margin-top: 4px;
+}
+
+/* error state for form fields */
+.form-field.error {
+    border: 1px solid #d4183d;
+    background: rgba(212, 24, 61, 0.05);
+}
+
+/* disabled button styles */
+.primary-btn:disabled {
+    background: var(--gray-400);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* checkbox row */
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    position: relative;
+}
+
+/* visually-hidden native checkbox, use label pseudo-elements for visuals */
+.checkbox-row .native-check {
+    position: absolute;
+    left: -9999px;
+}
+.checkbox-row label.terms {
+    position: relative;
+    padding-left: 28px;
+    cursor: pointer;
+    color: var(--text-dark);
+    font-size: 14px;
+}
+.checkbox-row label.terms::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--gray-500);
+    border-radius: 4px;
+    background: transparent;
+    box-sizing: border-box;
+}
+.checkbox-row input.native-check:checked + label.terms::before {
+    background: var(--fitlife-green);
+    border-color: var(--fitlife-green);
+}
+.checkbox-row label.terms::after {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    transform: translateY(-58%) rotate(45deg);
+    width: 6px;
+    height: 10px;
+    border-right: 2px solid transparent;
+    border-bottom: 2px solid transparent;
+}
+.checkbox-row input.native-check:checked + label.terms::after {
+    border-right-color: #fff;
+    border-bottom-color: #fff;
+}
+
+.checkbox-row .terms a {
+    color: var(--fitlife-green);
+    text-decoration: none;
+}
+
+.checkbox-row .terms a:hover {
+    text-decoration: underline;
+}
+
+/* primary button */
+.primary-btn {
+    width: 100%;
+    height: var(--btn-height);
+    background: var(--fitlife-green);
+    color: #fff;
+    border-radius: 8px;
+    text-transform: uppercase;
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 420px) {
+  .container { padding: 0 18px; }
+  .h-title { font-size: 20px; }
+  .h-sub { font-size: 13px; }
+}
+
+/* utility: remove component inline styles by using classes */
+.no-inline-styles {
+    all: unset;
+}
+
+/* page-specific background helpers */
+.register-bg { background: var(--white); min-height: 100vh; }
+
+/* Ensure register background responds to dark mode */
+.dark .register-bg { background: var(--background); }
+
+/* theme toggle button (top-right) */
+.theme-toggle-wrapper { position: fixed; top: 12px; right: 12px; z-index: 9999; }
+.theme-toggle { background: rgba(255,255,255,0.95); border: 1px solid rgba(0,0,0,0.06); color: var(--text-dark); width:40px; height:40px; border-radius:8px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.08); font-size:18px; display:inline-grid; place-items:center }
+.theme-toggle:hover { box-shadow:0 4px 10px rgba(0,0,0,0.12); }
+.dark .theme-toggle { background: rgba(0,0,0,0.6); color: #fff; border-color: rgba(255,255,255,0.08) }
+
+/* Explicit dark variables to ensure toggling .dark overrides system preferences */
+.dark {
+    --background: #000000;
+    --white: #000000;
+    --text-dark: #e9e9ea;
+    --gray-100: #1a1a1a;
+    --gray-400: #9b9b9b;
+    --gray-500: #bdbdbd;
+    --gray-600: #cfcfcf;
+    --fitlife-green: #00B050; /* keep accent */
+}
+
+.dark body {
+    background: #000000;
+}
+
+.dark ion-content {
+    --background: #000000;
+}
+
+/* toggle icon animation */
+.theme-toggle { position: relative; overflow: hidden; }
+.theme-toggle .icon { position: absolute; transition: transform 240ms cubic-bezier(.2,.9,.4,1), opacity 200ms ease; font-size:18px }
+.theme-toggle .sun { transform: translateY(0); opacity:1 }
+.theme-toggle .moon { transform: translateY(100%); opacity:0 }
+.theme-toggle[aria-pressed="true"] .sun { transform: translateY(-100%); opacity:0 }
+.theme-toggle[aria-pressed="true"] .moon { transform: translateY(0); opacity:1 }
+
+/* subtle background color transition */
+.theme-toggle { transition: background-color 240ms ease, border-color 240ms ease, color 240ms ease }

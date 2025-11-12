@@ -3,12 +3,12 @@ import { TabsPage } from './tabs.page';
 
 export const routes: Routes = [
   {
-    path: 'tabs',
+    path: '',
     component: TabsPage,
     children: [
       {
-        path: 'home',
-        loadComponent: () => import('../pages/home/home.page').then((m) => m.HomePage),
+        path: 'tab1',
+        loadComponent: () => import('../tab1/tab1.page').then((m) => m.Tab1Page),
       },
       {
         path: 'tab2',
@@ -22,14 +22,14 @@ export const routes: Routes = [
       },
       {
         path: '',
-        redirectTo: '/tabs/home',
+        redirectTo: '/tabs/tab1',
         pathMatch: 'full',
       },
     ],
   },
   {
     path: '',
-    redirectTo: '/tabs/home',
+    redirectTo: '/tabs/tab1',
     pathMatch: 'full',
   },
 ];
