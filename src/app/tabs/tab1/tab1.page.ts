@@ -6,8 +6,8 @@ import { play, flame, water, bulb, restaurant, barChart } from 'ionicons/icons';
 @Component({
   selector: 'app-tab1',
   template: `
-    <ion-content [fullscreen]="false" [scrollEvents]="true" class="dashboard-bg">
-      <div class="dashboard-container" style="pointer-events: auto;">
+    <ion-content [fullscreen]="false" class="dashboard-bg">
+      <div class="dashboard-container">
         <!-- Header con gradiente -->
         <div class="header-gradient">
           <h2 class="header-title">¡Hola, {{ userName() }}!</h2>

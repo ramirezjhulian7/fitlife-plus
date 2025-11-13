@@ -6,10 +6,6 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/home/home.page').then((m) => m.HomePage),
   },
   {
-    path: 'tabs',
-    loadChildren: () => import('./tabs/tabs.routes').then((m) => m.routes),
-  },
-  {
     path: 'register',
     loadComponent: () => import('./pages/register/register.page').then((m) => m.RegisterPage),
   },
@@ -20,5 +16,9 @@ export const routes: Routes = [
   {
     path: 'onboarding',
     loadComponent: () => import('./pages/onboarding/onboarding.page').then((m) => m.OnboardingPage),
+  },
+  {
+    path: '',
+    loadChildren: () => import('./tabs/tabs.routes').then((m) => m.routes),
   },
 ];

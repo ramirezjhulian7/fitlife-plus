@@ -8,8 +8,8 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
   template: `
     <!-- Vista de detalle del entrenamiento -->
     <ng-container *ngIf="selectedWorkout() !== null || showDetail()">
-      <ion-content [fullscreen]="false" [scrollEvents]="true" class="workout-detail-bg">
-        <div class="workout-detail-container" style="pointer-events: auto;">
+      <ion-content [fullscreen]="false" class="workout-detail-bg">
+        <div class="workout-detail-container">
           <!-- Header con gradiente -->
           <div class="workout-header">
             <ion-button
@@ -93,8 +93,8 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
 
     <!-- Vista de lista de entrenamientos -->
     <ng-container *ngIf="selectedWorkout() === null && !showDetail()">
-      <ion-content [fullscreen]="false" [scrollEvents]="true" class="workouts-bg">
-        <div class="workouts-container" style="pointer-events: auto;">
+      <ion-content [fullscreen]="false" class="workouts-bg">
+        <div class="workouts-container">
           <!-- Header con gradiente -->
           <div class="workouts-header">
             <h2 class="header-title">Entrenamientos</h2>
