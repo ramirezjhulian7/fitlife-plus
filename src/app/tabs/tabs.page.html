@@ -1,19 +1,4 @@
-<!-- Desktop/Tablet Layout -->
-<div *ngIf="isDesktop()" class="desktop-layout">
-  <app-desktop-sidebar
-    [activeScreen]="activeScreen"
-    [userName]="userName"
-    (onNavigate)="onNavigate($event)"
-    (onLogout)="onLogout()">
-  </app-desktop-sidebar>
-
-  <div class="desktop-content">
-    <ion-router-outlet></ion-router-outlet>
-  </div>
-</div>
-
-<!-- Mobile Layout -->
-<ion-tabs *ngIf="!isDesktop()">
+<ion-tabs>
   <ion-router-outlet></ion-router-outlet>
 
   <ion-tab-bar slot="bottom">

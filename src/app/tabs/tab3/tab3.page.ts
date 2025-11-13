@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-tab3',
   template: `
-    <ion-content [fullscreen]="isDesktop()">
+    <ion-content [fullscreen]="false">
       <ion-header [collapse]="true">
         <ion-toolbar>
           <ion-title>Nutrición</ion-title>
@@ -43,14 +43,5 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [IonContent, IonHeader, IonTitle, IonToolbar, CommonModule]
 })
-export class Tab3Page implements OnInit {
-  isDesktop = signal(false);
-
-  ngOnInit() {
-    this.checkDeviceType();
-  }
-
-  private checkDeviceType() {
-    this.isDesktop.set(window.innerWidth >= 768);
-  }
+export class Tab3Page {
 }

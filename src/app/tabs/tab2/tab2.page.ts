@@ -8,15 +8,17 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
   template: `
     <!-- Vista de detalle del entrenamiento -->
     <ng-container *ngIf="selectedWorkout() !== null || showDetail()">
-      <ion-content [fullscreen]="isDesktop()" class="workout-detail-bg">
-        <div class="workout-detail-container">
+      <ion-content [fullscreen]="false" [scrollEvents]="true" class="workout-detail-bg">
+        <div class="workout-detail-container" style="pointer-events: auto;">
           <!-- Header con gradiente -->
           <div class="workout-header">
             <ion-button
               fill="clear"
               color="light"
               class="back-button"
-              (click)="goBack()">
+              tappable
+              (click)="goBack()"
+              style="cursor: pointer;">
               <ion-icon slot="start" [icon]="arrowBackIcon"></ion-icon>
               Volver
             </ion-button>
@@ -78,7 +80,9 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
               expand="block"
               color="success"
               class="start-button"
-              (click)="startWorkout()">
+              tappable
+              (click)="startWorkout()"
+              style="cursor: pointer;">
               <ion-icon slot="start" [icon]="playIcon"></ion-icon>
               Iniciar entrenamiento
             </ion-button>
@@ -89,8 +93,8 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
 
     <!-- Vista de lista de entrenamientos -->
     <ng-container *ngIf="selectedWorkout() === null && !showDetail()">
-      <ion-content [fullscreen]="isDesktop()" class="workouts-bg">
-        <div class="workouts-container">
+      <ion-content [fullscreen]="false" [scrollEvents]="true" class="workouts-bg">
+        <div class="workouts-container" style="pointer-events: auto;">
           <!-- Header con gradiente -->
           <div class="workouts-header">
             <h2 class="header-title">Entrenamientos</h2>
@@ -102,7 +106,9 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
                 [color]="activeCategory() === category ? 'success' : 'medium'"
                 [outline]="activeCategory() !== category"
                 (click)="setActiveCategory(category)"
-                class="category-chip">
+                class="category-chip"
+                tappable
+                style="cursor: pointer;">
                 {{ category }}
               </ion-chip>
             </div>
@@ -122,11 +128,11 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
             <!-- Grid de entrenamientos -->
             <ion-grid class="workouts-grid">
               <ion-row>
-                <ion-col
+                  <ion-col
                   *ngFor="let workout of filteredWorkouts"
-                  [size]="isDesktop() ? '6' : '12'"
+                  [size]="'12'"
                   class="workout-col">
-                  <ion-card class="workout-card" (click)="selectWorkout(workout.id)">
+                  <ion-card class="workout-card" (click)="selectWorkout(workout.id)" tappable style="cursor: pointer;">
                     <!-- Imagen placeholder -->
                     <div class="workout-image">
                       <ion-icon [icon]="flashIcon" size="large"></ion-icon>
@@ -168,14 +174,9 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
   styles: [`
     .workout-detail-bg {
       --background: #f8fafc;
-      --padding-top: 0;
-      --padding-bottom: 0;
-      --padding-start: 0;
-      --padding-end: 0;
     }
 
     .workout-detail-container {
-      min-height: 100vh;
       padding: 24px;
     }
 
@@ -311,14 +312,9 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
 
     .workouts-bg {
       --background: #f8fafc;
-      --padding-top: 0;
-      --padding-bottom: 0;
-      --padding-start: 0;
-      --padding-end: 0;
     }
 
     .workouts-container {
-      min-height: 100vh;
       padding: 24px;
     }
 
@@ -469,12 +465,11 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
   standalone: true,
   imports: [IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonChip, IonGrid, IonRow, IonCol, IonBadge, CommonModule]
 })
-export class Tab2Page implements OnInit {
+export class Tab2Page {
   // Estado
   selectedWorkout = signal<number | null>(null);
   showDetail = signal(false);
   activeCategory = signal('Todos');
-  isDesktop = signal(false);
 
   // Iconos
   arrowBackIcon = arrowBack;
@@ -524,14 +519,6 @@ export class Tab2Page implements OnInit {
       exercises: 10,
     },
   ]);
-
-  ngOnInit() {
-    this.checkDeviceType();
-  }
-
-  private checkDeviceType() {
-    this.isDesktop.set(window.innerWidth >= 768);
-  }
 
   get filteredWorkouts() {
     const category = this.activeCategory();

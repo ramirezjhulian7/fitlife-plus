@@ -6,8 +6,8 @@ import { play, flame, water, bulb, restaurant, barChart } from 'ionicons/icons';
 @Component({
   selector: 'app-tab1',
   template: `
-    <ion-content [fullscreen]="isDesktop()" class="dashboard-bg">
-      <div class="dashboard-container">
+    <ion-content [fullscreen]="false" [scrollEvents]="true" class="dashboard-bg">
+      <div class="dashboard-container" style="pointer-events: auto;">
         <!-- Header con gradiente -->
         <div class="header-gradient">
           <h2 class="header-title">¡Hola, {{ userName() }}!</h2>
@@ -35,7 +35,9 @@ import { play, flame, water, bulb, restaurant, barChart } from 'ionicons/icons';
                   expand="block"
                   color="success"
                   class="workout-button"
-                  (click)="startWorkout()">
+                  tappable
+                  (click)="startWorkout()"
+                  style="cursor: pointer;">
                   <ion-icon slot="start" [icon]="playIcon"></ion-icon>
                   Comenzar entrenamiento
                 </ion-button>
@@ -99,7 +101,7 @@ import { play, flame, water, bulb, restaurant, barChart } from 'ionicons/icons';
           </div>
 
           <!-- Columna derecha (solo desktop) -->
-          <div class="right-column" *ngIf="isDesktop()">
+          <div class="right-column" style="display: none;">
             <!-- Receta saludable -->
             <ion-card class="recipe-card">
               <ion-card-header>
@@ -148,7 +150,7 @@ import { play, flame, water, bulb, restaurant, barChart } from 'ionicons/icons';
         </div>
 
         <!-- Receta móvil (solo mobile) -->
-        <div *ngIf="!isDesktop()">
+        <div>
           <ion-card class="recipe-card-mobile">
             <ion-card-header>
               <ion-card-title class="recipe-title">Receta saludable</ion-card-title>
@@ -175,14 +177,9 @@ import { play, flame, water, bulb, restaurant, barChart } from 'ionicons/icons';
   styles: [`
     .dashboard-bg {
       --background: #f8fafc;
-      --padding-top: 0;
-      --padding-bottom: 0;
-      --padding-start: 0;
-      --padding-end: 0;
     }
 
     .dashboard-container {
-      min-height: 100vh;
       padding: 24px;
     }
 
@@ -489,7 +486,6 @@ import { play, flame, water, bulb, restaurant, barChart } from 'ionicons/icons';
 })
 export class Tab1Page implements OnInit {
   userName = signal('Usuario');
-  isDesktop = signal(false);
   currentDate = signal('');
 
   // Iconos
@@ -502,7 +498,6 @@ export class Tab1Page implements OnInit {
 
   ngOnInit() {
     this.loadUserData();
-    this.checkDeviceType();
     this.setCurrentDate();
   }
 
@@ -516,10 +511,6 @@ export class Tab1Page implements OnInit {
         console.error('Error parsing user data:', e);
       }
     }
-  }
-
-  private checkDeviceType() {
-    this.isDesktop.set(window.innerWidth >= 768);
   }
 
   private setCurrentDate() {

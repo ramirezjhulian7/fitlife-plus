@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular/standalone';
@@ -10,16 +10,5 @@ import { IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular/stan
   standalone: true,
   imports: [IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule]
 })
-export class Tab4Page implements OnInit {
-  isDesktop = signal(false);
-
-  constructor() { }
-
-  ngOnInit() {
-    this.checkDeviceType();
-  }
-
-  private checkDeviceType() {
-    this.isDesktop.set(window.innerWidth >= 768);
-  }
+export class Tab4Page {
 }
