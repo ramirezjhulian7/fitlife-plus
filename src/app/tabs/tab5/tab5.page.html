@@ -1,18 +1,136 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>Perfil</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content [fullscreen]="true">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Cargando perfil...</p>
+  </div>
 
-<ion-content [fullscreen]="false">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Perfil</ion-title>
-    </ion-toolbar>
-  </ion-header>
+  <!-- Profile Content -->
+  <div *ngIf="!isLoading">
+  <!-- Header Section -->
+  <div class="profile-header">
+    <h2 class="profile-title">Perfil</h2>
 
-  <div class="container">
-    <h2>Perfil de Usuario</h2>
-    <p>Esta página está en desarrollo. Aquí podrás gestionar tu perfil, configuración y preferencias.</p>
+    <div class="user-card">
+      <div class="avatar-container">
+        <ion-avatar class="user-avatar">
+          <ion-icon name="person" color="primary"></ion-icon>
+        </ion-avatar>
+      </div>
+      <div class="user-info">
+        <h3 class="user-name">{{ userName }}</h3>
+        <p class="user-email">{{ getUserEmail() }}</p>
+      </div>
+      <ion-button fill="clear" color="light" (click)="editProfile()">
+        <ion-icon name="create" slot="start"></ion-icon>
+        Editar
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Content Sections -->
+  <div class="profile-content">
+    <!-- User Data Section -->
+    <div class="section">
+      <h3 class="section-title">Datos del usuario</h3>
+      <ion-card>
+        <ion-item>
+          <ion-label>
+            <h3>Edad</h3>
+            <p>{{ userProfile?.age || 28 }} años</p>
+          </ion-label>
+        </ion-item>
+        <ion-item>
+          <ion-label>
+            <h3>Peso actual</h3>
+            <p>{{ getCurrentWeight() }} kg</p>
+          </ion-label>
+        </ion-item>
+        <ion-item>
+          <ion-label>
+            <h3>Altura</h3>
+            <p>{{ userProfile?.height || 170 }} cm</p>
+          </ion-label>
+        </ion-item>
+        <ion-item>
+          <ion-label>
+            <h3>Objetivo</h3>
+            <p>{{ getGoalText() }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-card>
+    </div>
+
+    <!-- Preferences Section -->
+    <div class="section">
+      <h3 class="section-title">Preferencias</h3>
+      <ion-card>
+        <ion-item button (click)="navigateToWorkoutPreferences()">
+          <ion-icon name="fitness" color="primary" slot="start"></ion-icon>
+          <ion-label>
+            <h3>Preferencias de entrenamiento</h3>
+            <p>{{ getWorkoutFrequencyText() }}</p>
+          </ion-label>
+          <ion-icon name="chevron-forward" color="medium" slot="end"></ion-icon>
+        </ion-item>
+        <ion-item button (click)="navigateToNutritionPreferences()">
+          <ion-icon name="restaurant" color="primary" slot="start"></ion-icon>
+          <ion-label>
+            <h3>Preferencias nutricionales</h3>
+            <p>{{ getNutritionPreferencesText() }}</p>
+          </ion-label>
+          <ion-icon name="chevron-forward" color="medium" slot="end"></ion-icon>
+        </ion-item>
+      </ion-card>
+    </div>
+
+    <!-- Reminders Section -->
+    <div class="section">
+      <h3 class="section-title">Recordatorios</h3>
+      <ion-card>
+        <ion-item>
+          <ion-icon name="notifications" color="primary" slot="start"></ion-icon>
+          <ion-label>Recordatorio de entrenamiento</ion-label>
+          <ion-toggle [(ngModel)]="workoutReminder" (ionChange)="onReminderChange()" slot="end"></ion-toggle>
+        </ion-item>
+        <ion-item>
+          <ion-icon name="notifications" color="primary" slot="start"></ion-icon>
+          <ion-label>Recordatorio de comidas</ion-label>
+          <ion-toggle [(ngModel)]="mealReminder" (ionChange)="onReminderChange()" slot="end"></ion-toggle>
+        </ion-item>
+        <ion-item>
+          <ion-icon name="notifications" color="primary" slot="start"></ion-icon>
+          <ion-label>Recordatorio de hidratación</ion-label>
+          <ion-toggle [(ngModel)]="waterReminder" (ionChange)="onReminderChange()" slot="end"></ion-toggle>
+        </ion-item>
+      </ion-card>
+    </div>
+
+    <!-- Social Section -->
+    <div class="section">
+      <h3 class="section-title">Social</h3>
+      <ion-card>
+        <ion-item button (click)="navigateToChallenges()">
+          <ion-icon name="people" color="primary" slot="start"></ion-icon>
+          <ion-label>
+            <h3>Retos con amigos</h3>
+            <p>2 retos activos</p>
+          </ion-label>
+          <ion-icon name="chevron-forward" color="medium" slot="end"></ion-icon>
+        </ion-item>
+      </ion-card>
+    </div>
+
+    <!-- Settings Section -->
+    <div class="section">
+      <h3 class="section-title">Configuración</h3>
+      <ion-card>
+        <ion-item button (click)="logout()" color="danger">
+          <ion-icon name="log-out" slot="start" style="color: white;"></ion-icon>
+          <ion-label style="color: white;">Cerrar sesión</ion-label>
+        </ion-item>
+      </ion-card>
+    </div>
+  </div>
   </div>
 </ion-content>

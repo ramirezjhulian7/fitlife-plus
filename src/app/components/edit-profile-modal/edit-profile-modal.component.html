@@ -1,0 +1,74 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Editar Perfil</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+    <ion-list>
+      <ion-item>
+        <ion-label position="stacked">Nombre *</ion-label>
+        <ion-input
+          formControlName="name"
+          placeholder="Ingresa tu nombre"
+          type="text">
+        </ion-input>
+        <ion-note slot="error" *ngIf="profileForm.get('name')?.invalid && profileForm.get('name')?.touched">
+          {{ getErrorMessage('name') }}
+        </ion-note>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Edad *</ion-label>
+        <ion-input
+          formControlName="age"
+          placeholder="Ingresa tu edad"
+          type="number"
+          min="1"
+          max="120">
+        </ion-input>
+        <ion-note slot="error" *ngIf="profileForm.get('age')?.invalid && profileForm.get('age')?.touched">
+          {{ getErrorMessage('age') }}
+        </ion-note>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Altura (cm) *</ion-label>
+        <ion-input
+          formControlName="height"
+          placeholder="Ingresa tu altura en cm"
+          type="number"
+          min="50"
+          max="250">
+        </ion-input>
+        <ion-note slot="error" *ngIf="profileForm.get('height')?.invalid && profileForm.get('height')?.touched">
+          {{ getErrorMessage('height') }}
+        </ion-note>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Objetivo *</ion-label>
+        <ion-select formControlName="goal" placeholder="Selecciona tu objetivo">
+          <ion-select-option *ngFor="let goal of goals" [value]="goal.value">
+            {{ goal.label }}
+          </ion-select-option>
+        </ion-select>
+        <ion-note slot="error" *ngIf="profileForm.get('goal')?.invalid && profileForm.get('goal')?.touched">
+          {{ getErrorMessage('goal') }}
+        </ion-note>
+      </ion-item>
+    </ion-list>
+
+    <ion-button
+      expand="block"
+      type="submit"
+      [disabled]="profileForm.invalid"
+      class="ion-margin">
+      Guardar Cambios
+    </ion-button>
+  </form>
+</ion-content>

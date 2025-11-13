@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { SimpleDbService, User } from './simple-db.service';
+import { DatabaseService, User } from './database.service';
 
 export interface AuthState {
   isAuthenticated: boolean;
@@ -20,7 +20,7 @@ export class AuthService {
 
   public authState$ = this.authState.asObservable();
 
-  constructor(private dbService: SimpleDbService) {
+  constructor(private dbService: DatabaseService) {
     this.checkStoredAuth();
   }
 

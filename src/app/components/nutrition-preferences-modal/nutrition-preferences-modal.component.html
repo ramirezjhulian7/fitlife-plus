@@ -1,0 +1,39 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Preferencias Nutricionales</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="preferences-content">
+    <div class="info-section">
+      <ion-icon name="restaurant" color="primary"></ion-icon>
+      <p>Selecciona tus preferencias alimentarias para personalizar tus recomendaciones nutricionales</p>
+    </div>
+
+    <ion-list>
+      <ion-item *ngFor="let preference of preferencesOptions" class="preference-item">
+        <ion-checkbox
+          [checked]="isSelected(preference)"
+          (ionChange)="onPreferenceChange(preference, $event)"
+          slot="start">
+        </ion-checkbox>
+        <ion-label>{{ preference }}</ion-label>
+      </ion-item>
+    </ion-list>
+
+    <div class="selected-summary" *ngIf="selectedPreferences.length > 0">
+      <p><strong>Seleccionadas:</strong> {{ getSelectedPreferencesText() }}</p>
+    </div>
+
+    <ion-button
+      expand="block"
+      (click)="savePreferences()"
+      class="save-btn">
+      Guardar Preferencias
+    </ion-button>
+  </div>
+</ion-content>

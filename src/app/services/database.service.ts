@@ -9,6 +9,22 @@ export interface User {
   created_at?: string;
 }
 
+export interface UserProfile {
+  id?: number;
+  user_id: number;
+  name: string;
+  age: number;
+  height: number; // in cm
+  weight: number; // in kg
+  goal: string; // 'lose_weight', 'gain_weight', 'maintain_weight'
+  workout_frequency?: number; // times per week
+  workout_reminder: boolean;
+  meal_reminder: boolean;
+  water_reminder: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -157,9 +173,32 @@ export class DatabaseService {
       );
     `;
 
+    const createUserProfilesTable = `
+      CREATE TABLE IF NOT EXISTS user_profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        age INTEGER NOT NULL,
+        height REAL NOT NULL,
+        weight REAL NOT NULL,
+        goal TEXT NOT NULL,
+        workout_frequency INTEGER DEFAULT 3,
+        workout_reminder BOOLEAN DEFAULT 1,
+        meal_reminder BOOLEAN DEFAULT 1,
+        water_reminder BOOLEAN DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+        UNIQUE(user_id)
+      );
+    `;
+
     try {
       await this.db.execute(createUsersTable);
       console.log('Users table created successfully');
+      
+      await this.db.execute(createUserProfilesTable);
+      console.log('User profiles table created successfully');
     } catch (error) {
       console.error('Error creating tables:', error);
       throw error;
@@ -278,5 +317,113 @@ export class DatabaseService {
       this.db = null;
       this.isInitialized = false;
     }
+  }
+
+  // User Profile methods
+  async createUserProfile(profile: Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>): Promise<{ success: boolean; message: string; profileId?: number }> {
+    await this.ensureInitialized();
+
+    try {
+      const result = await this.db!.run(
+        `INSERT INTO user_profiles (user_id, name, age, height, weight, goal, workout_frequency, workout_reminder, meal_reminder, water_reminder)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          profile.user_id,
+          profile.name,
+          profile.age,
+          profile.height,
+          profile.weight,
+          profile.goal,
+          profile.workout_frequency || 3,
+          profile.workout_reminder ? 1 : 0,
+          profile.meal_reminder ? 1 : 0,
+          profile.water_reminder ? 1 : 0
+        ]
+      );
+
+      if (result.changes && result.changes.lastId) {
+        return {
+          success: true,
+          message: 'Perfil creado exitosamente',
+          profileId: result.changes.lastId
+        };
+      } else {
+        return { success: false, message: 'Error al crear perfil' };
+      }
+    } catch (error) {
+      console.error('Error creating user profile:', error);
+      return { success: false, message: 'Error al crear perfil' };
+    }
+  }
+
+  async getUserProfile(userId: number): Promise<UserProfile | null> {
+    await this.ensureInitialized();
+
+    try {
+      const result = await this.db!.query(
+        'SELECT * FROM user_profiles WHERE user_id = ?',
+        [userId]
+      );
+
+      if (result.values && result.values.length > 0) {
+        const profile = result.values[0] as any;
+        return {
+          ...profile,
+          workout_reminder: Boolean(profile.workout_reminder),
+          meal_reminder: Boolean(profile.meal_reminder),
+          water_reminder: Boolean(profile.water_reminder)
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error getting user profile:', error);
+      return null;
+    }
+  }
+
+  async updateUserProfile(userId: number, updates: Partial<Omit<UserProfile, 'id' | 'user_id' | 'created_at'>>): Promise<{ success: boolean; message: string }> {
+    await this.ensureInitialized();
+
+    try {
+      const updateFields: string[] = [];
+      const values: any[] = [];
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value !== undefined) {
+          updateFields.push(`${key} = ?`);
+          values.push(typeof value === 'boolean' ? (value ? 1 : 0) : value);
+        }
+      });
+
+      if (updateFields.length === 0) {
+        return { success: false, message: 'No hay campos para actualizar' };
+      }
+
+      // Always update the updated_at timestamp
+      updateFields.push('updated_at = CURRENT_TIMESTAMP');
+      values.push(userId);
+
+      const query = `UPDATE user_profiles SET ${updateFields.join(', ')} WHERE user_id = ?`;
+
+      const result = await this.db!.run(query, values);
+
+      if (result.changes && result.changes.changes && result.changes.changes > 0) {
+        return { success: true, message: 'Perfil actualizado exitosamente' };
+      } else {
+        return { success: false, message: 'Perfil no encontrado o no se pudo actualizar' };
+      }
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      return { success: false, message: 'Error al actualizar perfil' };
+    }
+  }
+
+  async updateProfilePreferences(userId: number, preferences: { workout_reminder?: boolean; meal_reminder?: boolean; water_reminder?: boolean }): Promise<{ success: boolean; message: string }> {
+    return this.updateUserProfile(userId, preferences);
+  }
+
+  async updateWorkoutPreferences(userId: number, workoutFrequency: number): Promise<{ success: boolean; message: string }> {
+    return this.updateUserProfile(userId, { workout_frequency: workoutFrequency });
   }
 }

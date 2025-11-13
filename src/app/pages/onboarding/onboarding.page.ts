@@ -3,7 +3,8 @@ import { IonContent, IonButton, IonInput, IonItem, IonLabel, IonRadioGroup, IonR
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { SimpleDbService } from '../../services/simple-db.service';
+import { DatabaseService } from '../../services/database.service';
+import { AuthService } from '../../services/auth.service';
 import { ProgressService } from '../../services/progress.service';
 import { heart } from 'ionicons/icons';
 
@@ -195,7 +196,8 @@ export class OnboardingPage {
   constructor(
     private router: Router,
     private formBuilder: FormBuilder,
-    private dbService: SimpleDbService,
+    private databaseService: DatabaseService,
+    private authService: AuthService,
     private progressService: ProgressService
   ) {
     this.personalForm = this.formBuilder.group({
@@ -283,9 +285,9 @@ export class OnboardingPage {
       registrationDate: registrationDate,
     };
 
-    // Guardar en localStorage
+    // Guardar en localStorage (para compatibilidad)
     localStorage.setItem('onboardingCompleted', 'true');
-    localStorage.setItem('userData', JSON.stringify(userData));
+    localStorage.setItem('onboardingData', JSON.stringify(userData));
     localStorage.setItem('registrationDate', registrationDate);
 
     // Agregar el peso inicial al historial de progreso con la fecha actual
@@ -293,10 +295,43 @@ export class OnboardingPage {
     const onboardingDate = new Date().toISOString().split('T')[0];
     this.progressService.addWeightEntry(initialWeight, `Peso inicial - ${onboardingDate}`);
 
-    // Opcional: guardar en DB
-    // await this.dbService.saveUserData(userData);
+    // Guardar perfil en la base de datos si el usuario está autenticado
+    const currentUser = this.authService.currentUser;
+    if (currentUser && currentUser.id) {
+      try {
+        const profileData = {
+          user_id: currentUser.id,
+          name: personalData.name,
+          age: personalData.age,
+          height: personalData.height,
+          weight: personalData.weight,
+          goal: this.mapGoalToDatabase(this.goal),
+          workout_reminder: true,
+          meal_reminder: true,
+          water_reminder: false
+        };
+
+        const result = await this.databaseService.createUserProfile(profileData);
+        if (result.success) {
+          console.log('Perfil guardado en la base de datos');
+        } else {
+          console.error('Error al guardar perfil:', result.message);
+        }
+      } catch (error) {
+        console.error('Error guardando perfil en BD:', error);
+      }
+    }
 
     this.router.navigate(['/tabs/dashboard']);
+  }
+
+  private mapGoalToDatabase(goal: string): string {
+    const goalMap: { [key: string]: string } = {
+      'lose': 'lose_weight',
+      'maintain': 'maintain_weight',
+      'gain': 'gain_weight'
+    };
+    return goalMap[goal] || 'lose_weight';
   }
 
   isSelected(pref: string): boolean {

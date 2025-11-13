@@ -1,0 +1,44 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Preferencias de Entrenamiento</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <form [formGroup]="preferencesForm" (ngSubmit)="savePreferences()">
+    <ion-list>
+      <ion-item>
+        <ion-label position="stacked">¿Cuántas veces por semana quieres entrenar? *</ion-label>
+        <ion-select
+          formControlName="workoutFrequency"
+          placeholder="Selecciona la frecuencia"
+          interface="action-sheet">
+          <ion-select-option *ngFor="let frequency of workoutFrequencies" [value]="frequency.value">
+            {{ frequency.label }}
+          </ion-select-option>
+        </ion-select>
+        <ion-note slot="error" *ngIf="preferencesForm.get('workoutFrequency')?.invalid && preferencesForm.get('workoutFrequency')?.touched">
+          {{ getErrorMessage() }}
+        </ion-note>
+      </ion-item>
+    </ion-list>
+
+    <div class="ion-padding">
+      <p class="info-text">
+        <ion-icon name="information-circle" color="primary"></ion-icon>
+        Esta preferencia te ayudará a personalizar tus rutinas y recordatorios de entrenamiento.
+      </p>
+    </div>
+
+    <ion-button
+      expand="block"
+      type="submit"
+      [disabled]="preferencesForm.invalid"
+      class="ion-margin">
+      Guardar Preferencias
+    </ion-button>
+  </form>
+</ion-content>
