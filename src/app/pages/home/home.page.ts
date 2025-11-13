@@ -46,8 +46,8 @@ import { UiService } from '../../services/ui.service';
   .content-wrapper { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 20px; padding: 28px 16px; box-sizing: border-box; padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px) + 56px); }
   .hero { text-align: center; padding: 8px 8px; }
     .hero-icon { font-size: 56px; color: #fff; }
-    .app-title { margin: 8px 0 0; font-size: 28px; font-weight: 700; }
-    .subtitle { margin: 6px 0 18px; opacity: 0.95; }
+    .app-title { margin: 8px 0 0; font-size: 28px; font-weight: 700; color: #fff; }
+    .subtitle { margin: 6px 0 18px; opacity: 0.95; color: #fff; }
     .actions { padding: 0 16px; }
     ion-button { margin-top: 10px; }
     .or { text-align: center; margin: 14px 0; color: rgba(255,255,255,0.9); }
