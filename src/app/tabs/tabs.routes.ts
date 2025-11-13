@@ -8,17 +8,17 @@ export const routes: Routes = [
     children: [
       {
         path: 'dashboard',
-        loadComponent: () => import('../tab1/tab1.page').then((m) => m.Tab1Page),
+        loadComponent: () => import('./tab1/tab1.page').then((m) => m.Tab1Page),
       },
       {
         path: 'workout',
         loadComponent: () =>
-          import('../tab2/tab2.page').then((m) => m.Tab2Page),
+          import('./tab2/tab2.page').then((m) => m.Tab2Page),
       },
       {
         path: 'nutrition',
         loadComponent: () =>
-          import('../tab3/tab3.page').then((m) => m.Tab3Page),
+          import('./tab3/tab3.page').then((m) => m.Tab3Page),
       },
       {
         path: 'progress',
