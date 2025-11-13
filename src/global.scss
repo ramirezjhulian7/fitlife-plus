@@ -441,3 +441,13 @@ ion-item.form-field input {
 
 /* subtle background color transition */
 .theme-toggle { transition: background-color 240ms ease, border-color 240ms ease, color 240ms ease }
+
+/* Tab styles */
+ion-tab-button {
+  --color-selected: var(--fitlife-green);
+  --color: #666666;
+}
+
+ion-tab-button ion-icon {
+  color: inherit;
+}

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { SimpleDbService } from '../../services/simple-db.service';
+import { heart } from 'ionicons/icons';
 
 @Component({
   standalone: true,
@@ -20,7 +21,7 @@ import { SimpleDbService } from '../../services/simple-db.service';
           <!-- Paso 0: Bienvenida -->
           <div *ngIf="step === 0" class="welcome-step">
             <div class="icon-container">
-              <ion-icon name="heart" class="welcome-icon"></ion-icon>
+              <ion-icon [icon]="heartIcon" class="welcome-icon"></ion-icon>
             </div>
             <div class="text-center">
               <h1 class="app-title">FitLife+</h1>
@@ -91,7 +92,7 @@ import { SimpleDbService } from '../../services/simple-db.service';
           <!-- Paso 4: Final -->
           <div *ngIf="step === 4" class="final-step">
             <div class="icon-container animate-pulse">
-              <ion-icon name="heart" class="final-icon"></ion-icon>
+              <ion-icon [icon]="heartIcon" class="final-icon"></ion-icon>
             </div>
             <div class="text-center">
               <p class="final-text">Hemos creado un plan personalizado basado en tus objetivos</p>
@@ -118,7 +119,7 @@ import { SimpleDbService } from '../../services/simple-db.service';
     .step-content { flex: 1; display: flex; flex-direction: column; justify-content: center; }
     .welcome-step { display: flex; flex-direction: column; align-items: center; gap: 32px; }
     .icon-container { width: 96px; height: 96px; background: var(--color-accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-    .welcome-icon { font-size: 48px; color: var(--fitlife-green); }
+    .welcome-icon { font-size: 56px; color: #000; }
     .app-title { color: var(--fitlife-green); font-size: 28px; font-weight: 700; }
     .welcome-text { color: var(--gray-600); text-align: center; }
     .form-step { }
@@ -131,7 +132,7 @@ import { SimpleDbService } from '../../services/simple-db.service';
     .checkbox-group { display: flex; flex-direction: column; gap: 12px; }
     .checkbox-item { --background: #ffffff; --border-radius: 8px; --border-color: var(--border); --border-width: 1px; --padding-start: 16px; --padding-end: 16px; }
     .final-step { display: flex; flex-direction: column; align-items: center; gap: 32px; }
-    .final-icon { font-size: 48px; color: var(--fitlife-green); }
+    .final-icon { font-size: 48px; color: #000; }
     .final-text { color: var(--gray-600); text-align: center; }
     .step-footer { margin-top: 24px; }
     .next-btn { --background: var(--fitlife-green); --color: #ffffff; --border-radius: 8px; }
@@ -145,6 +146,7 @@ export class OnboardingPage {
   goal = '';
   selectedPreferences: string[] = [];
   preferencesOptions = ['Vegetariano', 'Vegano', 'Sin gluten', 'Sin lactosa', 'Ninguna restricción'];
+  heartIcon = heart;
 
   steps = [
     { title: '¡Bienvenido a FitLife+!', subtitle: 'Tu bienestar comienza aquí' },
@@ -203,7 +205,7 @@ export class OnboardingPage {
     // Opcional: guardar en DB
     // await this.dbService.saveUserData(userData);
 
-    this.router.navigate(['/tabs/tab1']);
+    this.router.navigate(['/tabs/dashboard']);
   }
 
   isSelected(pref: string): boolean {

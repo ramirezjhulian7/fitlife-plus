@@ -98,7 +98,7 @@ export class LoginPage implements OnInit {
     if (!localStorage.getItem('onboardingCompleted')) {
       this.router.navigate(['/onboarding']);
     } else {
-      this.router.navigate(['/tabs/tab1']);
+      this.router.navigate(['/tabs/dashboard']);
     }
   }
 
