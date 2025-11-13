@@ -6,7 +6,7 @@ import { NutritionService, MealItem } from '../../services/nutrition.service';
 import { AddFoodModalComponent } from '../../components/add-food-modal/add-food-modal.component';
 
 interface Meal {
-  id: number;
+  id: string;
   icon: string;
   name: string;
   time: string;
@@ -59,7 +59,7 @@ interface Meal {
           <div class="meals-column">
             <div class="meals-header">
               <h3 class="meals-title">Registro de comidas</h3>
-              <ion-button fill="solid" color="success" size="small" class="add-button">
+              <ion-button fill="solid" color="success" size="small" class="add-button" (click)="addExtraMeal()">
                 <ion-icon slot="start" [icon]="addIcon"></ion-icon>
                 Añadir
               </ion-button>
@@ -73,10 +73,21 @@ interface Meal {
                       <ion-icon [icon]="getMealIcon(meal.icon)" size="large"></ion-icon>
                     </div>
                     <div class="meal-info">
-                      <div class="meal-header">
-                        <p class="meal-name">{{ meal.name }}</p>
+                    <div class="meal-header">
+                      <p class="meal-name">{{ meal.name }}</p>
+                      <div class="meal-header-actions">
                         <span class="meal-time">{{ meal.time }}</span>
+                        <ion-button
+                          *ngIf="meal.id.startsWith('extra-')"
+                          fill="clear"
+                          color="danger"
+                          size="small"
+                          class="delete-meal-button"
+                          (click)="removeExtraMeal(meal.id)">
+                          <ion-icon [icon]="trashIcon"></ion-icon>
+                        </ion-button>
                       </div>
+                    </div>
                       <ng-container *ngIf="meal.items.length === 0 && meal.pending; else mealItems">
                         <ion-button
                           fill="outline"
@@ -342,6 +353,12 @@ interface Meal {
       margin-bottom: 8px;
     }
 
+    .meal-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .meal-name {
       font-size: 16px;
       font-weight: 500;
@@ -352,6 +369,19 @@ interface Meal {
     .meal-time {
       font-size: 14px;
       color: #6b7280;
+    }
+
+    .delete-meal-button {
+      --padding-start: 4px;
+      --padding-end: 4px;
+      --padding-top: 4px;
+      --padding-bottom: 4px;
+      min-width: 32px;
+      height: 32px;
+    }
+
+    .delete-meal-button ion-icon {
+      font-size: 16px;
     }
 
     .meal-items-list {
@@ -572,7 +602,7 @@ export class Tab3Page {
 
   // Estado del modal
   showAddFoodModal = false;
-  currentMealType: 'breakfast' | 'lunch' | 'snack' | 'dinner' = 'breakfast';
+  currentMealType: string = 'breakfast';
 
   // Estado
   waterGlasses = signal(6);
@@ -593,7 +623,7 @@ export class Tab3Page {
   // Datos de comidas
   meals: Meal[] = [
     {
-      id: 1,
+      id: 'breakfast',
       icon: 'cafe',
       name: "Desayuno",
       time: "7:00 AM",
@@ -601,7 +631,7 @@ export class Tab3Page {
       pending: true,
     },
     {
-      id: 2,
+      id: 'lunch',
       icon: 'sunny',
       name: "Almuerzo",
       time: "1:00 PM",
@@ -609,7 +639,7 @@ export class Tab3Page {
       pending: true,
     },
     {
-      id: 3,
+      id: 'snack',
       icon: 'nutrition',
       name: "Snack",
       time: "4:00 PM",
@@ -617,7 +647,7 @@ export class Tab3Page {
       pending: true,
     },
     {
-      id: 4,
+      id: 'dinner',
       icon: 'moon',
       name: "Cena",
       time: "8:00 PM",
@@ -639,26 +669,36 @@ export class Tab3Page {
   // Actualizar datos de comidas desde el servicio
   private updateMealsData() {
     const mealsData = this.nutritionService.getMeals();
+
+    // Actualizar comidas estándar
     this.meals.forEach(meal => {
-      switch (meal.id) {
-        case 1:
-          meal.items = mealsData().breakfast;
-          meal.pending = meal.items.length === 0;
-          break;
-        case 2:
-          meal.items = mealsData().lunch;
-          meal.pending = meal.items.length === 0;
-          break;
-        case 3:
-          meal.items = mealsData().snack;
-          meal.pending = meal.items.length === 0;
-          break;
-        case 4:
-          meal.items = mealsData().dinner;
-          meal.pending = meal.items.length === 0;
-          break;
+      if (['breakfast', 'lunch', 'snack', 'dinner'].includes(meal.id)) {
+        meal.items = mealsData().get(meal.id) || [];
+        meal.pending = meal.items.length === 0;
       }
     });
+
+    // Agregar comidas extra dinámicas
+    const extraMeals: Meal[] = [];
+    mealsData().forEach((items, mealId) => {
+      if (mealId.startsWith('extra-')) {
+        const number = mealId.split('-')[1];
+        extraMeals.push({
+          id: mealId,
+          icon: 'nutrition',
+          name: `Comida extra ${number}`,
+          time: "",
+          items: items,
+          pending: items.length === 0,
+        });
+      }
+    });
+
+    // Combinar comidas estándar con extra
+    this.meals = [
+      ...this.meals.filter(meal => ['breakfast', 'lunch', 'snack', 'dinner'].includes(meal.id)),
+      ...extraMeals
+    ];
   }
 
   // Métodos para cálculos
@@ -670,19 +710,14 @@ export class Tab3Page {
     return this.getDailyTotals().calories / this.targetCalories;
   }
 
-  getMealTotals(mealId: number) {
+  getMealTotals(mealId: string) {
     const mealType = this.getMealTypeFromId(mealId);
     return this.nutritionService.getMealTotals(mealType);
   }
 
-  private getMealTypeFromId(mealId: number): 'breakfast' | 'lunch' | 'snack' | 'dinner' {
-    switch (mealId) {
-      case 1: return 'breakfast';
-      case 2: return 'lunch';
-      case 3: return 'snack';
-      case 4: return 'dinner';
-      default: return 'breakfast';
-    }
+  private getMealTypeFromId(mealId: string): string {
+    // Para comidas estándar y extra, devolver el mismo ID
+    return mealId;
   }
 
   // Métodos para iconos
@@ -697,7 +732,7 @@ export class Tab3Page {
   }
 
   // Métodos para el modal
-  openAddFoodModal(mealId: number) {
+  openAddFoodModal(mealId: string) {
     this.currentMealType = this.getMealTypeFromId(mealId);
     this.showAddFoodModal = true;
     console.log('Opening modal for meal:', this.currentMealType);
@@ -714,10 +749,24 @@ export class Tab3Page {
   }
 
   // Métodos para gestión de alimentos
-  removeFoodFromMeal(mealId: number, itemIndex: number) {
+  removeFoodFromMeal(mealId: string, itemIndex: number) {
     const mealType = this.getMealTypeFromId(mealId);
     this.nutritionService.removeFoodFromMeal(mealType, itemIndex);
     this.updateMealsData();
+  }
+
+  // Método para añadir comida extra
+  addExtraMeal() {
+    const mealId = this.nutritionService.addExtraMeal();
+    this.updateMealsData();
+    console.log('Added extra meal with ID:', mealId);
+  }
+
+  // Método para eliminar comida extra
+  removeExtraMeal(mealId: string) {
+    this.nutritionService.removeExtraMeal(mealId);
+    this.updateMealsData();
+    console.log('Removed extra meal with ID:', mealId);
   }
 
   // Método para vasos de agua

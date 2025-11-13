@@ -1,8 +1,8 @@
 import { Component, inject, signal, EventEmitter, Output, Input, OnChanges, SimpleChanges } from '@angular/core';
-import { IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonIcon, IonContent, IonSearchbar, IonList, IonItem, IonLabel, IonChip, IonInput, IonModal, IonCard, IonCardContent } from '@ionic/angular/standalone';
+import { IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonIcon, IonContent, IonSearchbar, IonList, IonItem, IonLabel, IonChip, IonInput, IonModal, IonCard, IonCardContent, IonCheckbox } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { close, add, remove } from 'ionicons/icons';
+import { close, add, remove, checkmark } from 'ionicons/icons';
 import { NutritionService, Food, MealItem } from '../../services/nutrition.service';
 
 @Component({
@@ -11,23 +11,33 @@ import { NutritionService, Food, MealItem } from '../../services/nutrition.servi
     <ion-modal
       [isOpen]="isOpen"
       (willDismiss)="close()"
-      [breakpoints]="[0, 0.5, 1]"
-      [initialBreakpoint]="1"
-      [keepContentsMounted]="true"
+      [backdropDismiss]="true"
+      [showBackdrop]="true"
+      class="centered-modal"
     >
       <ng-template>
         <ion-header>
           <ion-toolbar>
-            <ion-title>Añadir alimento</ion-title>
+            <ion-title>Añadir alimentos</ion-title>
             <ion-buttons slot="end">
-              <ion-button (click)="close()">
+              <ion-button
+                *ngIf="selectedFoods().length > 0"
+                (click)="addSelectedFoods()"
+                color="success"
+                fill="solid">
+                <svg slot="start" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                {{ selectedFoods().length }}
+              </ion-button>
+              <ion-button (click)="close()" fill="clear">
                 <ion-icon [icon]="closeIcon"></ion-icon>
               </ion-button>
             </ion-buttons>
           </ion-toolbar>
         </ion-header>
 
-        <ion-content [fullscreen]="false" class="modal-content-wrapper">
+        <ion-content [fullscreen]="false" class="modal-content-wrapper" [scrollY]="true">
           <!-- Debug info -->
           <div style="padding: 10px; background: #f0f0f0; margin: 10px; border-radius: 8px;">
             <p style="margin: 0; font-size: 12px;">
@@ -60,9 +70,14 @@ import { NutritionService, Food, MealItem } from '../../services/nutrition.servi
               <ion-item
                 *ngFor="let food of filteredFoods()"
                 button
-                (click)="selectFood(food)"
+                (click)="toggleFoodSelection(food)"
                 class="food-item"
                 detail="false">
+                <ion-checkbox
+                  slot="start"
+                  [checked]="isFoodSelected(food)"
+                  (ionChange)="toggleFoodSelection(food)">
+                </ion-checkbox>
                 <ion-label>
                   <h3 style="margin: 0 0 4px 0;">{{ food.name }}</h3>
                   <p style="margin: 0; font-size: 12px; color: #6b7280;">
@@ -77,6 +92,30 @@ import { NutritionService, Food, MealItem } from '../../services/nutrition.servi
                 <p>No hay alimentos disponibles</p>
               </div>
             </ng-template>
+          </div>
+
+          <!-- Alimentos seleccionados -->
+          <div *ngIf="selectedFoods().length > 0" class="selected-foods-section">
+            <h4 style="margin: 16px 12px 8px 12px; color: #16a34a; font-size: 16px; font-weight: 600;">
+              Alimentos seleccionados ({{ selectedFoods().length }})
+            </h4>
+            <ion-list class="selected-foods-list">
+              <ion-item *ngFor="let food of selectedFoods(); let i = index" class="selected-food-item">
+                <ion-label>
+                  <h4 style="margin: 0; font-size: 14px;">{{ food.name }}</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">
+                    {{ food.calories }} kcal
+                  </p>
+                </ion-label>
+                <ion-button
+                  fill="clear"
+                  color="danger"
+                  size="small"
+                  (click)="removeFromSelection(i)">
+                  <ion-icon [icon]="removeIcon"></ion-icon>
+                </ion-button>
+              </ion-item>
+            </ion-list>
           </div>
 
           <!-- Alimento seleccionado -->
@@ -136,9 +175,11 @@ import { NutritionService, Food, MealItem } from '../../services/nutrition.servi
     .modal-content-wrapper {
       --background: #ffffff;
       --padding-top: 0;
-      --padding-bottom: 80px;
+      --padding-bottom: 20px;
       --padding-start: 0;
       --padding-end: 0;
+      height: 100%;
+      overflow-y: auto;
     }
 
     .search-bar {
@@ -196,7 +237,7 @@ import { NutritionService, Food, MealItem } from '../../services/nutrition.servi
 
     .selected-food {
       margin: 12px;
-      margin-bottom: 80px;
+      margin-bottom: 20px;
     }
 
     .selected-food ion-card {
@@ -263,12 +304,55 @@ import { NutritionService, Food, MealItem } from '../../services/nutrition.servi
       color: #16a34a;
     }
 
-    .add-button {
-      --border-radius: 8px;
+    .selected-foods-section {
+      border-top: 1px solid #e5e7eb;
+      margin-top: 16px;
+      padding-top: 8px;
+    }
+
+    .selected-foods-list {
+      --background: transparent;
+      --ion-item-background: #f8fafc;
+      margin: 0 12px;
+      border-radius: 8px;
+    }
+
+    .selected-food-item {
+      --border-radius: 6px;
+      --padding-start: 12px;
+      --padding-end: 12px;
+      --inner-border-bottom: 0;
+      margin-bottom: 4px;
+    }
+
+    .selected-food-item h4 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    /* Centrar el modal */
+    :host ::ng-deep .centered-modal {
+      --width: 90vw;
+      --max-width: 500px;
+      --height: 80vh;
+      --max-height: 600px;
+      --border-radius: 16px;
+      --box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    :host ::ng-deep .centered-modal .modal-wrapper {
+      --height: auto;
+      --width: auto;
     }
   `],
     standalone: true,
-    imports: [IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonIcon, IonContent, IonSearchbar, IonList, IonItem, IonLabel, IonChip, IonInput, IonModal, IonCard, IonCardContent, CommonModule, FormsModule]
+    imports: [IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonIcon, IonContent, IonSearchbar, IonList, IonItem, IonLabel, IonChip, IonInput, IonModal, IonCard, IonCardContent, IonCheckbox, CommonModule, FormsModule]
 })
 export class AddFoodModalComponent {
     // Inputs
@@ -284,7 +368,7 @@ export class AddFoodModalComponent {
     }
     private _isOpen = false;
 
-    @Input() mealType: 'breakfast' | 'lunch' | 'snack' | 'dinner' = 'breakfast';
+    @Input() mealType: string = 'breakfast';
 
     // Outputs
     @Output() foodAdded = new EventEmitter<void>();
@@ -293,17 +377,18 @@ export class AddFoodModalComponent {
     // Servicios
     private nutritionService = inject(NutritionService);
 
-    // Estado
-    searchQuery = '';
-    selectedCategory = signal<string>('');
-    selectedFood = signal<Food | null>(null);
-    quantity = 100;
+  // Estado
+  searchQuery = '';
+  selectedCategory = signal<string>('');
+  selectedFood = signal<Food | null>(null);
+  selectedFoods = signal<Food[]>([]);
+  quantity = 100;
 
-    // Iconos
-    closeIcon = close;
-    addIcon = add;
-
-    // Datos
+  // Iconos
+  closeIcon = close;
+  addIcon = add;
+  checkmarkIcon = 'checkmark-circle-outline';
+  removeIcon = remove;    // Datos
     allFoods = this.nutritionService.getFoods();
     categories = this.nutritionService.getCategories();
 
@@ -316,7 +401,7 @@ export class AddFoodModalComponent {
     filteredFoods = signal<Food[]>(this.allFoods);
 
     // Métodos
-    open(mealType: 'breakfast' | 'lunch' | 'snack' | 'dinner') {
+    open(mealType: string) {
         console.log('Opening modal for meal:', mealType);
         this.mealType = mealType;
         this._isOpen = true;
@@ -328,21 +413,20 @@ export class AddFoodModalComponent {
         this.closeModal.emit();
     }
 
-    private resetState() {
-        console.log('Resetting state, allFoods length:', this.allFoods.length);
-        this.searchQuery = '';
-        this.selectedCategory.set('');
-        this.selectedFood.set(null);
-        this.quantity = 100;
-        // Crear una copia del array para forzar la detección de cambios
-        const foodsToSet = [...this.allFoods];
-        console.log('Setting filteredFoods to:', foodsToSet.length, 'foods');
-        this.filteredFoods.set(foodsToSet);
-        console.log('filteredFoods after set:', this.filteredFoods().length, 'foods');
-        console.log('Modal is now open, isOpen:', this.isOpen);
-    }
-
-    onSearchChange(event: any) {
+  private resetState() {
+    console.log('Resetting state, allFoods length:', this.allFoods.length);
+    this.searchQuery = '';
+    this.selectedCategory.set('');
+    this.selectedFood.set(null);
+    this.selectedFoods.set([]);
+    this.quantity = 100;
+    // Crear una copia del array para forzar la detección de cambios
+    const foodsToSet = [...this.allFoods];
+    console.log('Setting filteredFoods to:', foodsToSet.length, 'foods');
+    this.filteredFoods.set(foodsToSet);
+    console.log('filteredFoods after set:', this.filteredFoods().length, 'foods');
+    console.log('Modal is now open, isOpen:', this.isOpen);
+  }    onSearchChange(event: any) {
         this.searchQuery = event.detail.value || '';
         this.filterFoods();
     }
@@ -372,12 +456,51 @@ export class AddFoodModalComponent {
         this.filteredFoods.set(filtered);
     }
 
-    selectFood(food: Food) {
-        console.log('Food selected:', food.name);
-        this.selectedFood.set(food);
-    }
+  selectFood(food: Food) {
+    console.log('Food selected:', food.name);
+    this.selectedFood.set(food);
+  }
 
-    getCalculatedNutrient(nutrient: 'protein' | 'carbs' | 'fat' | 'calories'): number {
+  // Métodos para selección múltiple
+  toggleFoodSelection(food: Food) {
+    const currentSelected = this.selectedFoods();
+    const isSelected = currentSelected.some(f => f.id === food.id);
+
+    if (isSelected) {
+      // Remover de la selección
+      const newSelection = currentSelected.filter(f => f.id !== food.id);
+      this.selectedFoods.set(newSelection);
+    } else {
+      // Agregar a la selección
+      this.selectedFoods.set([...currentSelected, food]);
+    }
+  }
+
+  isFoodSelected(food: Food): boolean {
+    return this.selectedFoods().some(f => f.id === food.id);
+  }
+
+  removeFromSelection(index: number) {
+    const currentSelected = this.selectedFoods();
+    const newSelection = [...currentSelected];
+    newSelection.splice(index, 1);
+    this.selectedFoods.set(newSelection);
+  }
+
+  addSelectedFoods() {
+    const selectedFoods = this.selectedFoods();
+    if (selectedFoods.length === 0) return;
+
+    console.log('Adding selected foods:', selectedFoods.map(f => f.name).join(', '));
+
+    // Agregar cada alimento seleccionado con cantidad por defecto
+    selectedFoods.forEach(food => {
+      this.nutritionService.addFoodToMeal(this.mealType, food, this.quantity);
+    });
+
+    this.foodAdded.emit();
+    this.close();
+  }    getCalculatedNutrient(nutrient: 'protein' | 'carbs' | 'fat' | 'calories'): number {
         if (!this.selectedFood()) return 0;
 
         const food = this.selectedFood()!;
@@ -407,7 +530,12 @@ export class AddFoodModalComponent {
             case 'lunch': return 'Almuerzo';
             case 'snack': return 'Snack';
             case 'dinner': return 'Cena';
-            default: return '';
+            default:
+                if (mealType.startsWith('extra-')) {
+                    const number = mealType.split('-')[1];
+                    return `Comida extra ${number}`;
+                }
+                return mealType;
         }
     }
 }

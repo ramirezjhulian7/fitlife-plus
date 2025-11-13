@@ -3,10 +3,10 @@ import { Injectable, signal } from '@angular/core';
 export interface Food {
   id: number;
   name: string;
-  protein: number; // gramos
-  carbs: number; // gramos
-  fat: number; // gramos
-  calories: number; // kcal
+  protein: number;
+  carbs: number;
+  fat: number;
+  calories: number;
   category: string;
 }
 
@@ -17,6 +17,14 @@ export interface MealItem {
   calculatedCarbs: number;
   calculatedFat: number;
   calculatedCalories: number;
+}
+
+export interface MealData {
+  id: string;
+  name: string;
+  icon: string;
+  time: string;
+  items: MealItem[];
 }
 
 @Injectable({
@@ -148,18 +156,13 @@ export class NutritionService {
     { id: 100, name: "Sémola de trigo cocida", protein: 3.3, carbs: 20.3, fat: 0.4, calories: 98, category: "Cereales" }
   ];
 
-  // Estado de las comidas del día
-  private mealsData = signal<{
-    breakfast: MealItem[];
-    lunch: MealItem[];
-    snack: MealItem[];
-    dinner: MealItem[];
-  }>({
-    breakfast: [],
-    lunch: [],
-    snack: [],
-    dinner: []
-  });
+  // Estado de las comidas del día - ahora dinámico
+  private mealsData = signal<Map<string, MealItem[]>>(new Map([
+    ['breakfast', []],
+    ['lunch', []],
+    ['snack', []],
+    ['dinner', []]
+  ]));
 
   constructor() {
     this.loadMealsFromStorage();
@@ -191,7 +194,7 @@ export class NutritionService {
   }
 
   // Añadir alimento a una comida
-  addFoodToMeal(mealType: 'breakfast' | 'lunch' | 'snack' | 'dinner', food: Food, quantity: number = 100): void {
+  addFoodToMeal(mealType: string, food: Food, quantity: number = 100): void {
     const factor = quantity / 100; // Factor para calcular por 100g
 
     const mealItem: MealItem = {
@@ -203,16 +206,20 @@ export class NutritionService {
       calculatedCalories: food.calories * factor
     };
 
-    const currentMeals = this.mealsData();
-    currentMeals[mealType].push(mealItem);
+    const currentMeals = new Map(this.mealsData());
+    const currentMealItems = currentMeals.get(mealType) || [];
+    currentMealItems.push(mealItem);
+    currentMeals.set(mealType, currentMealItems);
     this.mealsData.set(currentMeals);
     this.saveMealsToStorage();
   }
 
   // Remover alimento de una comida
-  removeFoodFromMeal(mealType: 'breakfast' | 'lunch' | 'snack' | 'dinner', index: number): void {
-    const currentMeals = this.mealsData();
-    currentMeals[mealType].splice(index, 1);
+  removeFoodFromMeal(mealType: string, index: number): void {
+    const currentMeals = new Map(this.mealsData());
+    const currentMealItems = currentMeals.get(mealType) || [];
+    currentMealItems.splice(index, 1);
+    currentMeals.set(mealType, currentMealItems);
     this.mealsData.set(currentMeals);
     this.saveMealsToStorage();
   }
@@ -224,47 +231,75 @@ export class NutritionService {
 
   // Calcular totales del día
   getDailyTotals() {
-    const allMeals = [
-      ...this.mealsData().breakfast,
-      ...this.mealsData().lunch,
-      ...this.mealsData().snack,
-      ...this.mealsData().dinner
-    ];
+    const allMeals: MealItem[] = [];
+    this.mealsData().forEach(mealItems => {
+      allMeals.push(...mealItems);
+    });
 
     return {
-      calories: allMeals.reduce((sum, item) => sum + item.calculatedCalories, 0),
-      protein: allMeals.reduce((sum, item) => sum + item.calculatedProtein, 0),
-      carbs: allMeals.reduce((sum, item) => sum + item.calculatedCarbs, 0),
-      fat: allMeals.reduce((sum, item) => sum + item.calculatedFat, 0)
+      calories: allMeals.reduce((sum: number, item: MealItem) => sum + item.calculatedCalories, 0),
+      protein: allMeals.reduce((sum: number, item: MealItem) => sum + item.calculatedProtein, 0),
+      carbs: allMeals.reduce((sum: number, item: MealItem) => sum + item.calculatedCarbs, 0),
+      fat: allMeals.reduce((sum: number, item: MealItem) => sum + item.calculatedFat, 0)
     };
   }
 
   // Calcular totales por comida
-  getMealTotals(mealType: 'breakfast' | 'lunch' | 'snack' | 'dinner') {
-    const mealItems = this.mealsData()[mealType];
+  getMealTotals(mealType: string) {
+    const mealItems = this.mealsData().get(mealType) || [];
 
     return {
-      calories: mealItems.reduce((sum, item) => sum + item.calculatedCalories, 0),
-      protein: mealItems.reduce((sum, item) => sum + item.calculatedProtein, 0),
-      carbs: mealItems.reduce((sum, item) => sum + item.calculatedCarbs, 0),
-      fat: mealItems.reduce((sum, item) => sum + item.calculatedFat, 0)
+      calories: mealItems.reduce((sum: number, item: MealItem) => sum + item.calculatedCalories, 0),
+      protein: mealItems.reduce((sum: number, item: MealItem) => sum + item.calculatedProtein, 0),
+      carbs: mealItems.reduce((sum: number, item: MealItem) => sum + item.calculatedCarbs, 0),
+      fat: mealItems.reduce((sum: number, item: MealItem) => sum + item.calculatedFat, 0)
     };
+  }
+
+  // Eliminar una comida extra
+  removeExtraMeal(mealId: string): void {
+    const currentMeals = new Map(this.mealsData());
+    currentMeals.delete(mealId);
+    this.mealsData.set(currentMeals);
+    this.saveMealsToStorage();
+  }
+
+  // Crear una comida extra
+  addExtraMeal(): string {
+    const currentMeals = new Map(this.mealsData());
+    let extraMealNumber = 1;
+
+    // Encontrar el próximo número disponible para "extra-{number}"
+    while (currentMeals.has(`extra-${extraMealNumber}`)) {
+      extraMealNumber++;
+    }
+
+    const mealId = `extra-${extraMealNumber}`;
+    currentMeals.set(mealId, []);
+    this.mealsData.set(currentMeals);
+    this.saveMealsToStorage();
+
+    return mealId;
   }
 
   // Limpiar todas las comidas (nuevo día)
   clearAllMeals(): void {
-    this.mealsData.set({
-      breakfast: [],
-      lunch: [],
-      snack: [],
-      dinner: []
-    });
+    this.mealsData.set(new Map([
+      ['breakfast', []],
+      ['lunch', []],
+      ['snack', []],
+      ['dinner', []]
+    ]));
     this.saveMealsToStorage();
   }
 
   // Persistencia en localStorage
   private saveMealsToStorage(): void {
-    localStorage.setItem('nutritionMeals', JSON.stringify(this.mealsData()));
+    const mealsObject: { [key: string]: MealItem[] } = {};
+    this.mealsData().forEach((value, key) => {
+      mealsObject[key] = value;
+    });
+    localStorage.setItem('nutritionMeals', JSON.stringify(mealsObject));
   }
 
   private loadMealsFromStorage(): void {
@@ -272,9 +307,17 @@ export class NutritionService {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        this.mealsData.set(parsed);
+        const mealsMap = new Map<string, MealItem[]>();
+        Object.entries(parsed).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            mealsMap.set(key, value as MealItem[]);
+          }
+        });
+        this.mealsData.set(mealsMap);
       } catch (error) {
         console.error('Error loading meals from storage:', error);
+        // Fallback to default meals
+        this.clearAllMeals();
       }
     }
   }
