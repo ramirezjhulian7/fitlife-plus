@@ -53,6 +53,17 @@ import { DatabaseService } from '../../services/database.service';
                   <ion-icon slot="start" [icon]="playIcon"></ion-icon>
                   Continuar entrenamiento
                 </ion-button>
+                <ion-button
+                  expand="block"
+                  color="primary"
+                  fill="outline"
+                  class="workout-button complete-button"
+                  tappable
+                  (click)="completeWorkout()"
+                  style="cursor: pointer; margin-top: 8px;">
+                  <ion-icon slot="start" [icon]="addIcon"></ion-icon>
+                  Marcar como completado
+                </ion-button>
               </ion-card-content>
             </ion-card>
 
@@ -423,6 +434,12 @@ import { DatabaseService } from '../../services/database.service';
 
     .workout-button {
       --border-radius: 8px;
+    }
+
+    .complete-button {
+      --border-radius: 8px;
+      --border-color: #3b82f6;
+      --color: #3b82f6;
     }
 
     .active-workout-info {
@@ -1216,6 +1233,14 @@ export class Tab1Page implements OnInit, OnDestroy {
       this.router.navigate(['/tabs/workout'], {
         state: { selectedWorkoutId: activeWorkout.workout.id }
       });
+    }
+  }
+
+  completeWorkout() {
+    const activeWorkout = this.activeWorkout();
+    if (activeWorkout) {
+      this.workoutService.completeActiveWorkout();
+      console.log('Workout marked as completed manually');
     }
   }
 

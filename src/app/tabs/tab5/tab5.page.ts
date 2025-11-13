@@ -21,6 +21,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 })
 export class Tab5Page implements OnInit {
   userName: string = 'Usuario';
+  userEmail: string = '';
   userProfile: UserProfile | null = null;
   isLoading: boolean = true;
 
@@ -55,6 +56,60 @@ export class Tab5Page implements OnInit {
     localStorage.setItem(key, JSON.stringify(data));
   }
 
+  private getWeightHistoryKey(): string {
+    const userId = this.authService.currentUser?.id;
+    return userId ? `weightHistory_${userId}` : 'weightHistory';
+  }
+
+  private getWeightHistory(): any[] {
+    const key = this.getWeightHistoryKey();
+    const weightHistoryString = localStorage.getItem(key);
+    if (weightHistoryString) {
+      try {
+        return JSON.parse(weightHistoryString);
+      } catch (error) {
+        console.error('Error parsing weight history:', error);
+        return [];
+      }
+    }
+    return [];
+  }
+
+  private getNutritionPreferencesKey(): string {
+    const userId = this.authService.currentUser?.id;
+    return userId ? `nutritionMeals_${userId}` : 'nutritionMeals';
+  }
+
+  private getNutritionData(): any {
+    const key = this.getNutritionPreferencesKey();
+    const nutritionDataString = localStorage.getItem(key);
+    if (nutritionDataString) {
+      return JSON.parse(nutritionDataString);
+    }
+    
+    // If no user-specific nutrition data, try to load from onboarding
+    const onboardingData = this.getOnboardingData();
+    if (onboardingData && onboardingData.preferences) {
+      // Create nutrition data from onboarding preferences
+      const nutritionData = {
+        preferences: onboardingData.preferences,
+        meals: {},
+        created_at: new Date().toISOString()
+      };
+      
+      // Save it to user-specific localStorage
+      localStorage.setItem(key, JSON.stringify(nutritionData));
+      return nutritionData;
+    }
+    
+    return {};
+  }
+
+  private getOnboardingData(): any {
+    const onboardingDataString = localStorage.getItem('onboardingData');
+    return onboardingDataString ? JSON.parse(onboardingDataString) : null;
+  }
+
   async ngOnInit() {
     await this.loadUserProfile();
     // Initialize notifications after loading profile
@@ -65,61 +120,102 @@ export class Tab5Page implements OnInit {
     this.isLoading = true;
 
     try {
-      // Get user data from localStorage (user-specific key)
-      const userData = this.getUserData();
-      this.userName = userData.name || 'Usuario';
-
-      // Load reminder preferences from localStorage first
-      if (userData.reminders) {
-        this.workoutReminder = userData.reminders.workoutReminder ?? true;
-        this.mealReminder = userData.reminders.mealReminder ?? true;
-        this.waterReminder = userData.reminders.waterReminder ?? false;
-      }
-
-      // Create a profile-like object from userData
-      this.userProfile = {
-        id: 1, // dummy id since we're not using DB for basic data
-        user_id: 1, // dummy user_id
-        name: userData.name || 'Usuario',
-        age: userData.age || 28,
-        height: userData.height || 170,
-        weight: this.getCurrentWeight(), // Get from weightHistory
-        goal: this.mapGoalToDatabase(userData.goal || 'lose_weight'),
-        workout_frequency: userData.workoutFrequency || 3, // Load from localStorage
-        workout_reminder: this.workoutReminder,
-        meal_reminder: this.mealReminder,
-        water_reminder: this.waterReminder,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      // Load reminder preferences from database if user is authenticated (override localStorage if available)
       const currentUser = this.authService.currentUser;
+      
       if (currentUser && currentUser.id) {
+        // Set user email from authenticated user
+        this.userEmail = currentUser.email;
+        
+        // Try to load profile from database first
         const dbProfile = await this.databaseService.getUserProfile(currentUser.id);
+        
         if (dbProfile) {
+          // Use database profile data
+          this.userProfile = dbProfile;
+          this.userName = dbProfile.name;
+          
+          // Set reminder preferences from database
           this.workoutReminder = dbProfile.workout_reminder;
           this.mealReminder = dbProfile.meal_reminder;
           this.waterReminder = dbProfile.water_reminder;
-          // Update userProfile with correct user_id for preferences
-          if (this.userProfile) {
-            this.userProfile.user_id = currentUser.id;
-            this.userProfile.workout_reminder = this.workoutReminder;
-            this.userProfile.meal_reminder = this.mealReminder;
-            this.userProfile.water_reminder = this.waterReminder;
-          }
-
-          // Also update localStorage to keep it in sync
-          const updatedUserData = this.getUserData();
-          updatedUserData.reminders = {
+          
+          // Update localStorage to keep it in sync
+          const userData = this.getUserData();
+          userData.name = dbProfile.name;
+          userData.age = dbProfile.age;
+          userData.height = dbProfile.height;
+          userData.weight = dbProfile.weight;
+          userData.goal = dbProfile.goal;
+          userData.workoutFrequency = dbProfile.workout_frequency;
+          userData.reminders = {
             workoutReminder: this.workoutReminder,
             mealReminder: this.mealReminder,
             waterReminder: this.waterReminder
           };
-          this.saveUserData(updatedUserData);
+          this.saveUserData(userData);
+          
+          // Initialize nutrition preferences from onboarding if not already set
+          this.initializeNutritionPreferencesFromOnboarding();
         } else {
-          // If no profile exists in database, create one from localStorage data
+          // No database profile, create one from localStorage data
           await this.createProfileIfNeeded(currentUser.id);
+          
+          // Load from localStorage as fallback
+          const userData = this.getUserData();
+          this.userName = userData.name || 'Usuario';
+          
+          // Create profile object from localStorage data
+          this.userProfile = {
+            id: 1,
+            user_id: currentUser.id,
+            name: this.userName,
+            age: userData.age || 28,
+            height: userData.height || 170,
+            weight: this.getCurrentWeight(),
+            goal: this.mapGoalToDatabase(userData.goal || 'lose_weight'),
+            workout_frequency: userData.workoutFrequency || 3,
+            workout_reminder: this.workoutReminder,
+            meal_reminder: this.mealReminder,
+            water_reminder: this.waterReminder,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          
+          // Load reminder preferences from localStorage
+          if (userData.reminders) {
+            this.workoutReminder = userData.reminders.workoutReminder ?? true;
+            this.mealReminder = userData.reminders.mealReminder ?? true;
+            this.waterReminder = userData.reminders.waterReminder ?? false;
+          }
+        }
+      } else {
+        // No authenticated user, load from localStorage only
+        const userData = this.getUserData();
+        this.userName = userData.name || 'Usuario';
+        this.userEmail = userData.email || 'usuario@email.com';
+        
+        // Create profile object from localStorage data
+        this.userProfile = {
+          id: 1,
+          user_id: 1,
+          name: this.userName,
+          age: userData.age || 28,
+          height: userData.height || 170,
+          weight: this.getCurrentWeight(),
+          goal: this.mapGoalToDatabase(userData.goal || 'lose_weight'),
+          workout_frequency: userData.workoutFrequency || 3,
+          workout_reminder: this.workoutReminder,
+          meal_reminder: this.mealReminder,
+          water_reminder: this.waterReminder,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        // Load reminder preferences from localStorage
+        if (userData.reminders) {
+          this.workoutReminder = userData.reminders.workoutReminder ?? true;
+          this.mealReminder = userData.reminders.mealReminder ?? true;
+          this.waterReminder = userData.reminders.waterReminder ?? false;
         }
       }
     } catch (error) {
@@ -148,14 +244,18 @@ export class Tab5Page implements OnInit {
     try {
       // Get user data from localStorage
       const userData = this.getUserData();
+      
+      // Get current user email
+      const currentUser = this.authService.currentUser;
+      const userEmail = currentUser?.email || userData.email || 'usuario@email.com';
 
-      // Create profile with current reminder preferences
+      // Create profile with current data
       const profileData = {
         user_id: userId,
         name: userData.name || 'Usuario',
         age: userData.age || 28,
         height: userData.height || 170,
-        weight: userData.weight || this.getCurrentWeight(),
+        weight: this.getCurrentWeight(),
         goal: this.mapGoalToDatabase(userData.goal || 'lose_weight'),
         workout_frequency: userData.workoutFrequency || 3,
         workout_reminder: this.workoutReminder,
@@ -166,15 +266,51 @@ export class Tab5Page implements OnInit {
       const result = await this.databaseService.createUserProfile(profileData);
       if (result.success) {
         console.log('Profile created successfully for user:', userId);
-        // Update userProfile with correct user_id
+        // Update userProfile with the created profile data
         if (this.userProfile) {
           this.userProfile.user_id = userId;
+          this.userProfile.name = profileData.name;
+          this.userProfile.age = profileData.age;
+          this.userProfile.height = profileData.height;
+          this.userProfile.weight = profileData.weight;
+          this.userProfile.goal = profileData.goal;
+          this.userProfile.workout_frequency = profileData.workout_frequency;
         }
+        // Update userName and userEmail
+        this.userName = profileData.name;
+        this.userEmail = userEmail;
+        
+        // Initialize nutrition preferences from onboarding if available
+        this.initializeNutritionPreferencesFromOnboarding();
       } else {
         console.error('Error creating profile:', result.message);
       }
     } catch (error) {
       console.error('Error creating profile if needed:', error);
+    }
+  }
+
+  private initializeNutritionPreferencesFromOnboarding() {
+    try {
+      const onboardingData = this.getOnboardingData();
+      if (onboardingData && onboardingData.preferences && onboardingData.preferences.length > 0) {
+        const nutritionKey = this.getNutritionPreferencesKey();
+        const existingNutritionData = localStorage.getItem(nutritionKey);
+        
+        // Only initialize if no nutrition data exists for this user
+        if (!existingNutritionData) {
+          const nutritionData = {
+            preferences: onboardingData.preferences,
+            meals: {},
+            created_at: new Date().toISOString()
+          };
+          
+          localStorage.setItem(nutritionKey, JSON.stringify(nutritionData));
+          console.log('Nutrition preferences initialized from onboarding for user');
+        }
+      }
+    } catch (error) {
+      console.error('Error initializing nutrition preferences from onboarding:', error);
     }
   }
 
@@ -267,6 +403,13 @@ export class Tab5Page implements OnInit {
         return;
       }
 
+      // Update userProfile with new reminder preferences
+      if (this.userProfile) {
+        this.userProfile.workout_reminder = this.workoutReminder;
+        this.userProfile.meal_reminder = this.mealReminder;
+        this.userProfile.water_reminder = this.waterReminder;
+      }
+
       // Also save reminder preferences to localStorage
       const userData = this.getUserData();
       userData.reminders = {
@@ -321,7 +464,7 @@ export class Tab5Page implements OnInit {
           id: 999,
           title: '¡Prueba de Notificación!',
           body: 'Esta es una notificación de prueba para recordatorios de entrenamiento.',
-          schedule: { at: new Date(Date.now() + 1000) }, // Show in 1 second
+          schedule: { at: new Date() }, // Show immediately
           actionTypeId: 'workout',
           extra: { type: 'test' }
         }]
@@ -353,7 +496,7 @@ export class Tab5Page implements OnInit {
           id: 1000,
           title: '¡Prueba de Notificación!',
           body: 'Esta es una notificación de prueba para recordatorios de comidas.',
-          schedule: { at: new Date(Date.now() + 1000) }, // Show in 1 second
+          schedule: { at: new Date() }, // Show immediately
           actionTypeId: 'meal',
           extra: { type: 'test' }
         }]
@@ -385,7 +528,7 @@ export class Tab5Page implements OnInit {
           id: 1001,
           title: '¡Prueba de Notificación!',
           body: 'Esta es una notificación de prueba para recordatorios de hidratación.',
-          schedule: { at: new Date(Date.now() + 1000) }, // Show in 1 second
+          schedule: { at: new Date() }, // Show immediately
           actionTypeId: 'water',
           extra: { type: 'test' }
         }]
@@ -416,10 +559,7 @@ export class Tab5Page implements OnInit {
   }
 
   getUserEmail(): string {
-    // Get user name from userData in localStorage
-    const userData = this.getUserData();
-    const userName = userData.name || 'usuario';
-    return `${userName.toLowerCase().replace(/\s+/g, '')}@email.com`;
+    return this.userEmail || 'usuario@email.com';
   }
 
   getGoalText(): string {
@@ -451,8 +591,8 @@ export class Tab5Page implements OnInit {
   }
 
   getNutritionPreferencesText(): string {
-    const userData = this.getUserData();
-    const preferences = userData.preferences || [];
+    const nutritionData = this.getNutritionData();
+    const preferences = nutritionData.preferences || [];
 
     if (preferences.length === 0) {
       return 'Sin preferencias';
@@ -465,20 +605,11 @@ export class Tab5Page implements OnInit {
 
   getCurrentWeight(): number {
     // Get current weight from the last entry in weightHistory
-    const userId = this.authService.currentUser?.id;
-    const weightHistoryKey = userId ? `weightHistory_${userId}` : 'weightHistory';
-    const weightHistoryString = localStorage.getItem(weightHistoryKey);
-    if (weightHistoryString) {
-      try {
-        const weightHistory = JSON.parse(weightHistoryString);
-        if (weightHistory && weightHistory.length > 0) {
-          // Return the most recent weight entry
-          const sortedHistory = weightHistory.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-          return sortedHistory[0].weight;
-        }
-      } catch (error) {
-        console.error('Error parsing weight history:', error);
-      }
+    const weightHistory = this.getWeightHistory();
+    if (weightHistory && weightHistory.length > 0) {
+      // Return the most recent weight entry
+      const sortedHistory = weightHistory.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      return sortedHistory[0].weight;
     }
 
     // Fallback to userData weight or default

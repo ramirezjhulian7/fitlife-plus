@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { AuthService } from './auth.service';
+import { ProgressService } from './progress.service';
 
 export interface Workout {
   id: number;
@@ -29,7 +30,7 @@ export class WorkoutService {
   // Signal para el entrenamiento activo
   private activeWorkoutSignal = signal<ActiveWorkout | null>(null);
 
-  constructor(private authService: AuthService) {
+  constructor(private authService: AuthService, private progressService: ProgressService) {
     this.loadActiveWorkout();
   }
 
@@ -52,7 +53,26 @@ export class WorkoutService {
     this.saveActiveWorkout(activeWorkout);
   }
 
-  // Detener el entrenamiento activo
+  // Completar un entrenamiento y registrarlo en el progreso
+  private completeWorkout(activeWorkout: ActiveWorkout): void {
+    // Registrar el entrenamiento como completado en el ProgressService
+    this.progressService.addWorkoutEntry(true, activeWorkout.workout.type, activeWorkout.duration);
+
+    // Detener el entrenamiento
+    this.stopWorkout();
+
+    console.log(`Workout "${activeWorkout.workout.title}" completed successfully!`);
+  }
+
+  // Marcar manualmente un entrenamiento como completado
+  completeActiveWorkout(): void {
+    const active = this.activeWorkoutSignal();
+    if (active && active.isActive) {
+      this.completeWorkout(active);
+    }
+  }
+
+  // Detener el entrenamiento activo (sin completarlo)
   stopWorkout(): void {
     this.activeWorkoutSignal.set(null);
     const userId = this.authService.currentUser?.id;
@@ -69,9 +89,9 @@ export class WorkoutService {
     const elapsed = (Date.now() - active.startTime.getTime()) / 1000 / 60; // minutos
     const progress = Math.min(elapsed / active.duration, 1);
 
-    // Si se completó, detener automáticamente
-    if (progress >= 1) {
-      this.stopWorkout();
+    // Si se completó, registrar como completado y detener automáticamente
+    if (progress >= 1 && active.isActive) {
+      this.completeWorkout(active);
       return 1;
     }
 
