@@ -19,12 +19,22 @@ export interface MealItem {
   calculatedCalories: number;
 }
 
-export interface MealData {
-  id: string;
+export interface RecipeIngredient {
+  food: Food;
+  quantity: number;
+}
+
+export interface Recipe {
+  id: number;
   name: string;
-  icon: string;
+  ingredients: RecipeIngredient[];
+  instructions: string;
   time: string;
-  items: MealItem[];
+  image: string;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
 }
 
 @Injectable({
@@ -156,6 +166,166 @@ export class NutritionService {
     { id: 100, name: "Sémola de trigo cocida", protein: 3.3, carbs: 20.3, fat: 0.4, calories: 98, category: "Cereales" }
   ];
 
+  // Recetas disponibles
+  private recipes: Recipe[] = [
+    {
+      id: 1,
+      name: "Ensalada de Pollo con Quinoa",
+      ingredients: [
+        { food: this.foods.find(f => f.id === 31)!, quantity: 150 }, // Pollo
+        { food: this.foods.find(f => f.id === 23)!, quantity: 100 }, // Quinoa
+        { food: this.foods.find(f => f.id === 11)!, quantity: 50 },  // Lechuga
+        { food: this.foods.find(f => f.id === 12)!, quantity: 100 }, // Tomate
+        { food: this.foods.find(f => f.id === 15)!, quantity: 50 },  // Pimiento
+        { food: this.foods.find(f => f.id === 71)!, quantity: 10 }   // Aceite de oliva
+      ],
+      instructions: "1. Cocinar la quinoa según las instrucciones del paquete. 2. Cortar el pollo en tiras y cocinarlo a la plancha. 3. Lavar y cortar las verduras. 4. Mezclar todos los ingredientes en un bol grande. 5. Aliñar con aceite de oliva y servir.",
+      time: "25 min",
+      image: "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400",
+      totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0
+    },
+    {
+      id: 2,
+      name: "Bowl de Salmón con Verduras",
+      ingredients: [
+        { food: this.foods.find(f => f.id === 34)!, quantity: 150 }, // Salmón
+        { food: this.foods.find(f => f.id === 16)!, quantity: 100 }, // Brócoli
+        { food: this.foods.find(f => f.id === 13)!, quantity: 80 },  // Zanahoria
+        { food: this.foods.find(f => f.id === 22)!, quantity: 100 }, // Arroz integral
+        { food: this.foods.find(f => f.id === 71)!, quantity: 5 }    // Aceite de oliva
+      ],
+      instructions: "1. Cocinar el arroz integral. 2. Asar el salmón al horno o a la plancha. 3. Cocer al vapor el brócoli y las zanahorias. 4. Servir todo en un bol grande con un chorrito de aceite de oliva.",
+      time: "30 min",
+      image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400",
+      totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0
+    },
+    {
+      id: 3,
+      name: "Wrap de Pavo con Verduras",
+      ingredients: [
+        { food: this.foods.find(f => f.id === 32)!, quantity: 100 }, // Pavo
+        { food: this.foods.find(f => f.id === 25)!, quantity: 50 },  // Pan integral
+        { food: this.foods.find(f => f.id === 11)!, quantity: 30 },  // Lechuga
+        { food: this.foods.find(f => f.id === 12)!, quantity: 50 },  // Tomate
+        { food: this.foods.find(f => f.id === 15)!, quantity: 30 },  // Pimiento
+        { food: this.foods.find(f => f.id === 42)!, quantity: 50 }   // Yogur natural
+      ],
+      instructions: "1. Cortar el pavo en tiras finas. 2. Lavar y cortar las verduras. 3. Colocar el pan integral, añadir el pavo y las verduras. 4. Enrollar como un wrap. 5. Servir con yogur natural como salsa.",
+      time: "15 min",
+      image: "https://images.unsplash.com/photo-1550507992-eb63ffee0847?w=400",
+      totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0
+    },
+    {
+      id: 4,
+      name: "Tostadas de Aguacate con Huevo",
+      ingredients: [
+        { food: this.foods.find(f => f.id === 25)!, quantity: 60 },  // Pan integral
+        { food: this.foods.find(f => f.id === 74)!, quantity: 80 },  // Aguacate
+        { food: this.foods.find(f => f.id === 36)!, quantity: 50 },  // Huevos
+        { food: this.foods.find(f => f.id === 12)!, quantity: 30 },  // Tomate
+        { food: this.foods.find(f => f.id === 71)!, quantity: 5 }    // Aceite de oliva
+      ],
+      instructions: "1. Tostar el pan integral. 2. Cocer los huevos (hervidos o fritos). 3. Machacar el aguacate y untarlo en el pan. 4. Añadir el huevo cocido y rodajas de tomate. 5. Sazonar con un poco de aceite de oliva.",
+      time: "20 min",
+      image: "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=400",
+      totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0
+    },
+    {
+      id: 5,
+      name: "Pasta Integral con Garbanzos",
+      ingredients: [
+        { food: this.foods.find(f => f.id === 26)!, quantity: 100 }, // Pasta cocida
+        { food: this.foods.find(f => f.id === 52)!, quantity: 80 },  // Garbanzos
+        { food: this.foods.find(f => f.id === 12)!, quantity: 60 },  // Tomate
+        { food: this.foods.find(f => f.id === 14)!, quantity: 30 },  // Cebolla
+        { food: this.foods.find(f => f.id === 71)!, quantity: 10 },  // Aceite de oliva
+        { food: this.foods.find(f => f.id === 15)!, quantity: 40 }   // Pimiento
+      ],
+      instructions: "1. Cocinar la pasta según las instrucciones. 2. En una sartén, sofreír la cebolla y el pimiento con aceite de oliva. 3. Añadir los garbanzos y el tomate picado. 4. Mezclar con la pasta cocida. 5. Cocinar 5 minutos más y servir.",
+      time: "25 min",
+      image: "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=400",
+      totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0
+    },
+    {
+      id: 6,
+      name: "Batido Proteico de Plátano",
+      ingredients: [
+        { food: this.foods.find(f => f.id === 2)!, quantity: 100 },  // Plátano
+        { food: this.foods.find(f => f.id === 41)!, quantity: 200 }, // Leche desnatada
+        { food: this.foods.find(f => f.id === 47)!, quantity: 50 },  // Yogur griego
+        { food: this.foods.find(f => f.id === 65)!, quantity: 15 },  // Semillas de chía
+        { food: this.foods.find(f => f.id === 61)!, quantity: 20 }   // Almendras
+      ],
+      instructions: "1. Pelar el plátano y cortarlo en trozos. 2. En una batidora, añadir todos los ingredientes. 3. Batir hasta obtener una mezcla homogénea. 4. Si queda muy espeso, añadir un poco más de leche. 5. Servir inmediatamente o refrigerar.",
+      time: "5 min",
+      image: "https://images.unsplash.com/photo-1571771019784-3ff35f4f4277?w=400",
+      totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0
+    },
+    {
+      id: 7,
+      name: "Salmón al Horno con Quinoa",
+      ingredients: [
+        { food: this.foods.find(f => f.id === 34)!, quantity: 180 }, // Salmón
+        { food: this.foods.find(f => f.id === 23)!, quantity: 120 }, // Quinoa
+        { food: this.foods.find(f => f.id === 17)!, quantity: 60 },  // Espinaca
+        { food: this.foods.find(f => f.id === 13)!, quantity: 50 },  // Zanahoria
+        { food: this.foods.find(f => f.id === 71)!, quantity: 8 }    // Aceite de oliva
+      ],
+      instructions: "1. Precalentar el horno a 200°C. 2. Cocinar la quinoa. 3. Colocar el salmón en una bandeja con aceite de oliva y hornear 15-20 minutos. 4. Saltear las verduras. 5. Servir el salmón con la quinoa y las verduras.",
+      time: "35 min",
+      image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400",
+      totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0
+    },
+    {
+      id: 8,
+      name: "Ensalada de Atún con Huevos",
+      ingredients: [
+        { food: this.foods.find(f => f.id === 35)!, quantity: 100 }, // Atún en agua
+        { food: this.foods.find(f => f.id === 36)!, quantity: 60 },  // Huevos
+        { food: this.foods.find(f => f.id === 11)!, quantity: 40 },  // Lechuga
+        { food: this.foods.find(f => f.id === 12)!, quantity: 70 },  // Tomate
+        { food: this.foods.find(f => f.id === 20)!, quantity: 50 },  // Pepino
+        { food: this.foods.find(f => f.id === 71)!, quantity: 8 }    // Aceite de oliva
+      ],
+      instructions: "1. Cocer los huevos y cortarlos en cuartos. 2. Escurrir el atún. 3. Lavar y cortar todas las verduras. 4. Mezclar todos los ingredientes en un bol. 5. Aliñar con aceite de oliva y servir fresca.",
+      time: "20 min",
+      image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400",
+      totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0
+    },
+    {
+      id: 9,
+      name: "Tortilla de Verduras con Queso",
+      ingredients: [
+        { food: this.foods.find(f => f.id === 36)!, quantity: 120 }, // Huevos (2 huevos)
+        { food: this.foods.find(f => f.id === 15)!, quantity: 60 },  // Pimiento
+        { food: this.foods.find(f => f.id === 14)!, quantity: 40 },  // Cebolla
+        { food: this.foods.find(f => f.id === 12)!, quantity: 50 },  // Tomate
+        { food: this.foods.find(f => f.id === 44)!, quantity: 30 },  // Queso mozzarella
+        { food: this.foods.find(f => f.id === 71)!, quantity: 5 }    // Aceite de oliva
+      ],
+      instructions: "1. Batir los huevos en un bol. 2. Picar finamente las verduras y el queso. 3. Calentar aceite en una sartén. 4. Añadir las verduras y cocinar 5 minutos. 5. Verter los huevos batidos, añadir el queso y cocinar hasta que cuaje. 6. Dar la vuelta y terminar de cocinar.",
+      time: "25 min",
+      image: "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=400",
+      totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0
+    },
+    {
+      id: 10,
+      name: "Lentejas con Verduras",
+      ingredients: [
+        { food: this.foods.find(f => f.id === 51)!, quantity: 120 }, // Lentejas cocidas
+        { food: this.foods.find(f => f.id === 13)!, quantity: 60 },  // Zanahoria
+        { food: this.foods.find(f => f.id === 14)!, quantity: 40 },  // Cebolla
+        { food: this.foods.find(f => f.id === 15)!, quantity: 50 },  // Pimiento
+        { food: this.foods.find(f => f.id === 12)!, quantity: 60 },  // Tomate
+        { food: this.foods.find(f => f.id === 71)!, quantity: 8 }    // Aceite de oliva
+      ],
+      instructions: "1. En una olla, calentar aceite de oliva. 2. Sofreír la cebolla, zanahoria y pimiento picados. 3. Añadir el tomate picado y cocinar 5 minutos. 4. Incorporar las lentejas cocidas y un poco de agua si es necesario. 5. Cocinar 10 minutos más y servir caliente.",
+      time: "30 min",
+      image: "https://images.unsplash.com/photo-1547592180-85f173990554?w=400",
+      totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0
+    }
+  ];
+
   // Estado de las comidas del día - ahora dinámico
   private mealsData = signal<Map<string, MealItem[]>>(new Map([
     ['breakfast', []],
@@ -165,7 +335,54 @@ export class NutritionService {
   ]));
 
   constructor() {
+    this.calculateRecipeTotals();
     this.loadMealsFromStorage();
+  }
+
+  // Calcular totales nutricionales para todas las recetas
+  private calculateRecipeTotals(): void {
+    this.recipes.forEach(recipe => {
+      let totalCalories = 0;
+      let totalProtein = 0;
+      let totalCarbs = 0;
+      let totalFat = 0;
+
+      recipe.ingredients.forEach(ingredient => {
+        const factor = ingredient.quantity / 100;
+        totalCalories += ingredient.food.calories * factor;
+        totalProtein += ingredient.food.protein * factor;
+        totalCarbs += ingredient.food.carbs * factor;
+        totalFat += ingredient.food.fat * factor;
+      });
+
+      recipe.totalCalories = Math.round(totalCalories);
+      recipe.totalProtein = Math.round(totalProtein * 10) / 10;
+      recipe.totalCarbs = Math.round(totalCarbs * 10) / 10;
+      recipe.totalFat = Math.round(totalFat * 10) / 10;
+    });
+  }
+
+  // Obtener 3 recetas aleatorias
+  getRandomRecipes(count: number = 3): Recipe[] {
+    const shuffled = [...this.recipes].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  }
+
+  // Obtener receta por ID
+  getRecipeById(id: number): Recipe | undefined {
+    return this.recipes.find(recipe => recipe.id === id);
+  }
+
+  // Obtener todas las recetas
+  getAllRecipes(): Recipe[] {
+    return this.recipes;
+  }
+
+  // Añadir receta completa a una comida
+  addRecipeToMeal(mealType: string, recipe: Recipe): void {
+    recipe.ingredients.forEach(ingredient => {
+      this.addFoodToMeal(mealType, ingredient.food, ingredient.quantity);
+    });
   }
 
   // Obtener todos los alimentos

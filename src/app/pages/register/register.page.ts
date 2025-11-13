@@ -125,6 +125,9 @@ export class RegisterPage implements OnInit {
       this.showToastMessage(result.message);
       
       if (result.success) {
+        // Store registration date
+        localStorage.setItem('registrationDate', new Date().toISOString());
+        
         // Navigate to onboarding or dashboard after successful registration
         setTimeout(() => {
           if (!localStorage.getItem('onboardingCompleted')) {

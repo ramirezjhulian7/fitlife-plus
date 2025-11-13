@@ -1,7 +1,8 @@
 import { Component, OnInit, inject, signal, OnDestroy } from '@angular/core';
-import { IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonProgressBar, IonGrid, IonRow, IonCol } from '@ionic/angular/standalone';
+import { IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonProgressBar, IonGrid, IonRow, IonCol, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
-import { play, flame, water, bulb, restaurant, barChart, time } from 'ionicons/icons';
+import { play, flame, water, bulb, restaurant, barChart, time, close, nutrition, addCircle } from 'ionicons/icons';
+import { NutritionService, Recipe, MealItem } from '../../services/nutrition.service';
 import { WorkoutService, ActiveWorkout } from '../../services/workout.service';
 import { Router } from '@angular/router';
 
@@ -91,10 +92,10 @@ import { Router } from '@angular/router';
                         </div>
                         <div class="metric-info">
                           <p class="metric-label">Calorías</p>
-                          <p class="metric-value">1,240</p>
+                          <p class="metric-value">{{ dailyCalories().toFixed(0) }}</p>
                         </div>
                       </div>
-                      <p class="metric-goal">Meta: 2,000 kcal</p>
+                      <p class="metric-goal">Meta: {{ targetCalories }} kcal</p>
                     </ion-card-content>
                   </ion-card>
                 </ion-col>
@@ -107,10 +108,10 @@ import { Router } from '@angular/router';
                         </div>
                         <div class="metric-info">
                           <p class="metric-label">Agua</p>
-                          <p class="metric-value">1.5 L</p>
+                          <p class="metric-value">{{ (waterGlasses() * 250 / 1000).toFixed(1) }} L</p>
                         </div>
                       </div>
-                      <p class="metric-goal">Meta: 2.5 L</p>
+                      <p class="metric-goal">Meta: {{ (targetWater * 250 / 1000).toFixed(1) }} L</p>
                     </ion-card-content>
                   </ion-card>
                 </ion-col>
@@ -188,25 +189,141 @@ import { Router } from '@angular/router';
         <div>
           <ion-card class="recipe-card-mobile">
             <ion-card-header>
-              <ion-card-title class="recipe-title">Receta saludable</ion-card-title>
+              <ion-card-title class="recipe-title">Recetas saludables</ion-card-title>
             </ion-card-header>
             <ion-card-content>
-              <div class="recipe-content">
-                <div class="recipe-image">
-                  <ion-icon [icon]="restaurantIcon" size="large"></ion-icon>
-                </div>
-                <div class="recipe-info">
-                  <p class="recipe-name">Bowl de quinoa y aguacate</p>
-                  <p class="recipe-details">25 min • 450 kcal</p>
-                  <ion-button fill="clear" color="success" class="recipe-link">
-                    Ver receta →
-                  </ion-button>
+              <div class="recipes-list-mobile">
+                <div *ngFor="let recipe of allRecipes()" class="recipe-item-mobile" (click)="openRecipeModal(recipe)">
+                  <div class="recipe-image-mobile">
+                    <img [src]="recipe.image" [alt]="recipe.name" class="recipe-img-mobile">
+                  </div>
+                  <div class="recipe-info-mobile">
+                    <p class="recipe-name-mobile">{{ recipe.name }}</p>
+                    <p class="recipe-details-mobile">{{ recipe.time }} • {{ recipe.totalCalories }} kcal</p>
+                  </div>
                 </div>
               </div>
             </ion-card-content>
           </ion-card>
         </div>
       </div>
+
+      <!-- Modal para detalles de receta -->
+      <ion-modal [isOpen]="showRecipeModal" (willDismiss)="closeRecipeModal()" class="recipe-modal">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>Detalles de la Receta</ion-title>
+            <ion-buttons slot="end">
+              <ion-button (click)="closeRecipeModal()">
+                <ion-icon [icon]="closeIcon"></ion-icon>
+              </ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+
+        <ion-content class="recipe-modal-content">
+          <div *ngIf="selectedRecipe()" class="recipe-details">
+            <!-- Imagen de la receta -->
+            <div class="recipe-header">
+              <img [src]="selectedRecipe()!.image" [alt]="selectedRecipe()!.name" class="recipe-detail-image">
+              <h2 class="recipe-detail-title">{{ selectedRecipe()!.name }}</h2>
+              <div class="recipe-meta">
+                <span class="recipe-time"><ion-icon [icon]="timeIcon"></ion-icon> {{ selectedRecipe()!.time }}</span>
+                <span class="recipe-calories"><ion-icon [icon]="nutritionIcon"></ion-icon> {{ selectedRecipe()!.totalCalories }} kcal</span>
+              </div>
+            </div>
+
+            <!-- Macronutrientes -->
+            <div class="recipe-nutrients">
+              <div class="nutrient-item">
+                <span class="nutrient-label">Proteínas</span>
+                <span class="nutrient-value">{{ selectedRecipe()!.totalProtein }}g</span>
+              </div>
+              <div class="nutrient-item">
+                <span class="nutrient-label">Carbohidratos</span>
+                <span class="nutrient-value">{{ selectedRecipe()!.totalCarbs }}g</span>
+              </div>
+              <div class="nutrient-item">
+                <span class="nutrient-label">Grasas</span>
+                <span class="nutrient-value">{{ selectedRecipe()!.totalFat }}g</span>
+              </div>
+            </div>
+
+            <!-- Ingredientes -->
+            <div class="recipe-section">
+              <h3 class="section-title">Ingredientes</h3>
+              <div class="ingredients-list">
+                <div *ngFor="let ingredient of selectedRecipe()!.ingredients" class="ingredient-item">
+                  <span class="ingredient-name">{{ ingredient.food.name }}</span>
+                  <span class="ingredient-quantity">{{ ingredient.quantity }}g</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Instrucciones -->
+            <div class="recipe-section">
+              <h3 class="section-title">Preparación</h3>
+              <p class="recipe-instructions">{{ selectedRecipe()!.instructions }}</p>
+            </div>
+
+            <!-- Botón para añadir -->
+            <div class="recipe-actions">
+              <ion-button
+                expand="block"
+                color="success"
+                (click)="addRecipeToMeal($event, selectedRecipe()!)">
+                <ion-icon slot="start" [icon]="addIcon"></ion-icon>
+                Añadir receta completa
+              </ion-button>
+            </div>
+          </div>
+        </ion-content>
+      </ion-modal>
+
+      <!-- Modal para seleccionar comida -->
+      <ion-modal [isOpen]="showMealSelector" (willDismiss)="closeMealSelector()" class="meal-selector-modal">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>Seleccionar comida</ion-title>
+            <ion-buttons slot="end">
+              <ion-button (click)="closeMealSelector()">
+                <ion-icon [icon]="closeIcon"></ion-icon>
+              </ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+
+        <ion-content class="meal-selector-content">
+          <div class="meal-selector-info" *ngIf="selectedRecipeForMeal()">
+            <p class="meal-selector-text">
+              ¿A qué comida quieres añadir <strong>{{ selectedRecipeForMeal()!.name }}</strong>?
+            </p>
+          </div>
+
+          <div class="meal-options">
+            <ion-card
+              *ngFor="let meal of meals"
+              class="meal-option-card"
+              button
+              (click)="confirmAddRecipeToMeal(meal.id)">
+              <ion-card-content class="meal-option-content">
+                <div class="meal-option-icon">
+                  <ion-icon [icon]="getMealIcon(meal.icon)" size="large"></ion-icon>
+                </div>
+                <div class="meal-option-info">
+                  <h3 class="meal-option-name">{{ meal.name }}</h3>
+                  <p class="meal-option-details">
+                    {{ meal.items.length }} alimentos • {{ getMealTotals(meal.id).calories.toFixed(0) }} kcal
+                  </p>
+                </div>
+                <div class="meal-option-arrow">
+                  <ion-icon [icon]="addIcon"></ion-icon>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </div>
+        </ion-content>
+      </ion-modal>
     </ion-content>
   `,
   styles: [`
@@ -554,9 +671,304 @@ import { Router } from '@angular/router';
         padding: 24px 24px 100px 24px; /* Extra padding bottom for tabs */
       }
     }
+
+    /* Estilos para lista de recetas móviles */
+    .recipes-list-mobile {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .recipe-item-mobile {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .recipe-item-mobile:hover {
+      background: #f3f4f6;
+    }
+
+    .recipe-image-mobile {
+      width: 64px;
+      height: 64px;
+      background: #e5e7eb;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .recipe-image-mobile img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .recipe-info-mobile {
+      flex: 1;
+    }
+
+    .recipe-name-mobile {
+      font-size: 14px;
+      font-weight: 500;
+      color: #111827;
+      margin: 0 0 4px 0;
+    }
+
+    .recipe-details-mobile {
+      font-size: 12px;
+      color: #6b7280;
+      margin: 0;
+    }
+
+    /* Modal de receta */
+    :host ::ng-deep .recipe-modal {
+      --width: 90vw;
+      --max-width: 500px;
+      --height: 80vh;
+      --border-radius: 16px;
+      --box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .recipe-modal-content {
+      --background: #ffffff;
+    }
+
+    .recipe-details {
+      padding: 20px;
+    }
+
+    .recipe-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .recipe-detail-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .recipe-detail-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #16a34a;
+      margin: 0 0 8px 0;
+    }
+
+    .recipe-meta {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .recipe-time,
+    .recipe-calories {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .recipe-nutrients {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .nutrient-item {
+      text-align: center;
+    }
+
+    .nutrient-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+
+    .nutrient-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #16a34a;
+    }
+
+    .recipe-section {
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+      margin: 0 0 12px 0;
+    }
+
+    .ingredients-list {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .ingredient-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .ingredient-item:last-child {
+      border-bottom: none;
+    }
+
+    .ingredient-name {
+      font-size: 14px;
+      color: #374151;
+    }
+
+    .ingredient-quantity {
+      font-size: 14px;
+      font-weight: 500;
+      color: #16a34a;
+    }
+
+    .recipe-instructions {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #374151;
+      margin: 0;
+    }
+
+    .recipe-actions {
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    /* Modal selector de comidas */
+    :host ::ng-deep .meal-selector-modal {
+      --width: 90vw;
+      --max-width: 400px;
+      --height: auto;
+      --max-height: 70vh;
+      --border-radius: 16px;
+      --box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .meal-selector-content {
+      --background: #ffffff;
+      --padding-top: 0;
+      --padding-bottom: 20px;
+    }
+
+    .meal-selector-info {
+      padding: 20px 20px 0 20px;
+      text-align: center;
+    }
+
+    .meal-selector-text {
+      font-size: 16px;
+      color: #374151;
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .meal-options {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .meal-option-card {
+      --background: #f9fafb;
+      --border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      margin: 0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .meal-option-card:hover {
+      --background: #f3f4f6;
+      border-color: #16a34a;
+    }
+
+    .meal-option-content {
+      --padding-start: 16px;
+      --padding-end: 16px;
+      --padding-top: 16px;
+      --padding-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .meal-option-icon {
+      width: 40px;
+      height: 40px;
+      background: #dcfce7;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .meal-option-icon ion-icon {
+      color: #16a34a;
+    }
+
+    .meal-option-info {
+      flex: 1;
+    }
+
+    .meal-option-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+      margin: 0 0 4px 0;
+    }
+
+    .meal-option-details {
+      font-size: 12px;
+      color: #6b7280;
+      margin: 0;
+    }
+
+    .meal-option-arrow {
+      width: 24px;
+      height: 24px;
+      background: #16a34a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .meal-option-arrow ion-icon {
+      color: white;
+      font-size: 14px;
+    }
   `],
   standalone: true,
-  imports: [IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonProgressBar, IonGrid, IonRow, IonCol, CommonModule]
+  imports: [IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonProgressBar, IonGrid, IonRow, IonCol, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, CommonModule]
 })
 export class Tab1Page implements OnInit, OnDestroy {
   userName = signal('Usuario');
@@ -569,8 +981,18 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   // Servicios
   private workoutService = inject(WorkoutService);
+  private nutritionService = inject(NutritionService);
   private router = inject(Router);
   private progressInterval: any;
+  private dataUpdateInterval: any;
+  private lastNutritionData: any;
+  private lastHydrationData: any;
+
+  // Datos de nutrición e hidratación
+  dailyCalories = signal(0);
+  waterGlasses = signal(6); // Estado compartido de vasos de agua
+  targetCalories = 2000;
+  targetWater = 8; // 8 vasos = 2L
 
   // Iconos
   playIcon = play;
@@ -580,16 +1002,81 @@ export class Tab1Page implements OnInit, OnDestroy {
   restaurantIcon = restaurant;
   barChartIcon = barChart;
   timeIcon = time;
+  addIcon = addCircle;
+  closeIcon = close;
+  nutritionIcon = nutrition;
+
+  // Recetas
+  allRecipes = signal<Recipe[]>([]);
+
+  // Estado del modal de receta
+  showRecipeModal = false;
+  selectedRecipe = signal<Recipe | null>(null);
+
+  // Estado del modal selector de comidas
+  showMealSelector = false;
+  selectedRecipeForMeal = signal<Recipe | null>(null);
+
+  // Datos de comidas para el selector
+  meals: any[] = [
+    {
+      id: 'breakfast',
+      icon: 'cafe',
+      name: "Desayuno",
+      time: "7:00 AM",
+      items: [],
+      pending: true,
+    },
+    {
+      id: 'lunch',
+      icon: 'sunny',
+      name: "Almuerzo",
+      time: "1:00 PM",
+      items: [],
+      pending: true,
+    },
+    {
+      id: 'snack',
+      icon: 'nutrition',
+      name: "Snack",
+      time: "4:00 PM",
+      items: [],
+      pending: true,
+    },
+    {
+      id: 'dinner',
+      icon: 'moon',
+      name: "Cena",
+      time: "8:00 PM",
+      items: [],
+      pending: true,
+    },
+  ];
 
   ngOnInit() {
     this.loadUserData();
     this.setCurrentDate();
     this.initializeActiveWorkout();
+    this.loadNutritionData();
+    this.loadHydrationData();
+    this.loadAllRecipes();
+
+    // Inicializar datos de referencia para comparación
+    this.lastNutritionData = this.nutritionService.getDailyTotals();
+    this.lastHydrationData = JSON.parse(localStorage.getItem('hydrationData') || '{}');
+
+    // Actualizar datos cada 2 segundos para sincronizar con otras tabs
+    this.dataUpdateInterval = setInterval(() => {
+      this.checkForDataUpdates();
+    }, 2000);
   }
 
   ngOnDestroy() {
     if (this.progressInterval) {
       clearInterval(this.progressInterval);
+    }
+    if (this.dataUpdateInterval) {
+      clearInterval(this.dataUpdateInterval);
     }
   }
 
@@ -641,6 +1128,55 @@ export class Tab1Page implements OnInit, OnDestroy {
     this.router.navigate(['/tabs/workout']);
   }
 
+  private loadNutritionData() {
+    const nutritionTotals = this.nutritionService.getDailyTotals();
+    this.dailyCalories.set(nutritionTotals.calories);
+  }
+
+  private loadHydrationData() {
+    // Cargar estado de hidratación desde localStorage
+    const stored = localStorage.getItem('hydrationData');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        this.waterGlasses.set(parsed.glasses || 6);
+      } catch (e) {
+        console.error('Error loading hydration data:', e);
+      }
+    }
+  }
+
+  private checkForDataUpdates() {
+    // Verificar cambios en nutrición
+    const currentNutrition = this.nutritionService.getDailyTotals();
+    if (JSON.stringify(currentNutrition) !== JSON.stringify(this.lastNutritionData)) {
+      this.lastNutritionData = currentNutrition;
+      this.loadNutritionData();
+    }
+
+    // Verificar cambios en hidratación
+    const hydrationData = localStorage.getItem('hydrationData');
+    if (hydrationData) {
+      const parsed = JSON.parse(hydrationData);
+      if (JSON.stringify(parsed) !== JSON.stringify(this.lastHydrationData)) {
+        this.lastHydrationData = parsed;
+        this.loadHydrationData();
+      }
+    }
+  }
+
+  // Método para actualizar datos de nutrición (llamado desde otras tabs)
+  updateNutritionData() {
+    this.loadNutritionData();
+  }
+
+  // Método para actualizar datos de hidratación (llamado desde otras tabs)
+  updateHydrationData(glasses: number) {
+    this.waterGlasses.set(glasses);
+    // Guardar en localStorage para compartir entre tabs
+    localStorage.setItem('hydrationData', JSON.stringify({ glasses }));
+  }
+
   continueWorkout() {
     const activeWorkout = this.activeWorkout();
     if (activeWorkout) {
@@ -649,5 +1185,60 @@ export class Tab1Page implements OnInit, OnDestroy {
         state: { selectedWorkoutId: activeWorkout.workout.id }
       });
     }
+  }
+
+  // Métodos para recetas
+  private loadAllRecipes() {
+    const recipes = this.nutritionService.getAllRecipes();
+    this.allRecipes.set(recipes);
+  }
+
+  // Método para abrir modal de receta
+  openRecipeModal(recipe: Recipe) {
+    this.selectedRecipe.set(recipe);
+    this.showRecipeModal = true;
+  }
+
+  closeRecipeModal() {
+    this.showRecipeModal = false;
+    this.selectedRecipe.set(null);
+  }
+
+  // Método para añadir receta completa a una comida
+  addRecipeToMeal(event: Event, recipe: Recipe) {
+    event.stopPropagation(); // Evitar que se abra el modal de detalles
+    this.selectedRecipeForMeal.set(recipe);
+    this.showMealSelector = true;
+  }
+
+  // Método para confirmar añadir receta a una comida específica
+  confirmAddRecipeToMeal(mealId: string) {
+    const recipe = this.selectedRecipeForMeal();
+    if (recipe) {
+      this.nutritionService.addRecipeToMeal(mealId, recipe);
+      console.log(`Recipe "${recipe.name}" added to ${mealId}`);
+    }
+    this.closeMealSelector();
+  }
+
+  closeMealSelector() {
+    this.showMealSelector = false;
+    this.selectedRecipeForMeal.set(null);
+  }
+
+  // Método para iconos de comidas
+  getMealIcon(iconName: string): string {
+    switch (iconName) {
+      case 'cafe': return this.playIcon; // Usando playIcon como placeholder
+      case 'sunny': return this.flameIcon; // Usando flameIcon como placeholder
+      case 'moon': return this.waterIcon; // Usando waterIcon como placeholder
+      case 'nutrition': return this.nutritionIcon;
+      default: return this.nutritionIcon;
+    }
+  }
+
+  // Método para calcular totales por comida
+  getMealTotals(mealId: string) {
+    return this.nutritionService.getMealTotals(mealId);
   }
 }
