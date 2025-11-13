@@ -57,16 +57,14 @@ import { Router } from '@angular/router';
             <ng-template #defaultWorkout>
               <ion-card class="workout-card">
                 <ion-card-header>
-                  <ion-card-title class="workout-title">Entrenamiento de hoy</ion-card-title>
-                  <span class="workout-time">30 min</span>
+                  <ion-card-title class="workout-title">¡Comienza tu entrenamiento!</ion-card-title>
+                  <span class="workout-time">Elige tu rutina</span>
                 </ion-card-header>
                 <ion-card-content>
-                  <ion-progress-bar
-                    value="0.65"
-                    class="workout-progress"
-                    color="success">
-                  </ion-progress-bar>
-                  <p class="workout-status">65% completado - HIIT Cardio</p>
+                  <div class="no-workout-message">
+                    <p class="no-workout-text">No tienes ningún entrenamiento activo. ¿Listo para empezar?</p>
+                    <p class="no-workout-subtext">Explora nuestras rutinas de HIIT, Yoga, Fuerza y Cardio</p>
+                  </div>
                   <ion-button
                     expand="block"
                     color="success"
@@ -75,7 +73,7 @@ import { Router } from '@angular/router';
                     (click)="startWorkout()"
                     style="cursor: pointer;">
                     <ion-icon slot="start" [icon]="playIcon"></ion-icon>
-                    Comenzar entrenamiento
+                    Explorar entrenamientos
                   </ion-button>
                 </ion-card-content>
               </ion-card>
@@ -283,6 +281,25 @@ import { Router } from '@angular/router';
       font-size: 14px;
       color: #374151;
       margin: 8px 0 16px 0;
+    }
+
+    .no-workout-message {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .no-workout-text {
+      font-size: 16px;
+      color: #374151;
+      margin: 0 0 8px 0;
+      font-weight: 500;
+    }
+
+    .no-workout-subtext {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 0;
+      line-height: 1.4;
     }
 
     .workout-button {
@@ -620,8 +637,8 @@ export class Tab1Page implements OnInit, OnDestroy {
   }
 
   startWorkout() {
-    // TODO: Implementar navegación a la página de entrenamientos
-    console.log('Starting workout...');
+    // Navegar a la pestaña de entrenamientos
+    this.router.navigate(['/tabs/workout']);
   }
 
   continueWorkout() {
