@@ -83,10 +83,23 @@ export class LoginPage implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required]]
     });
+
+    // If already authenticated, redirect automatically
+    if (this.authService.isAuthenticated) {
+      this.redirectToAppropriatePage();
+    }
   }
 
   onBack() { 
     this.router.navigate(['/']); 
+  }
+
+  private redirectToAppropriatePage() {
+    if (!localStorage.getItem('onboardingCompleted')) {
+      this.router.navigate(['/onboarding']);
+    } else {
+      this.router.navigate(['/tabs/tab1']);
+    }
   }
 
   async onLogin(event?: Event) {
@@ -108,11 +121,7 @@ export class LoginPage implements OnInit {
       if (result.success) {
         // Navigate to onboarding or dashboard after successful login
         setTimeout(() => {
-          if (!localStorage.getItem('onboardingCompleted')) {
-            this.router.navigate(['/onboarding']);
-          } else {
-            this.router.navigate(['/tabs/tab1']);
-          }
+          this.redirectToAppropriatePage();
         }, 1500);
       }
     } catch (error) {

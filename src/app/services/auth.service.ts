@@ -25,19 +25,24 @@ export class AuthService {
   }
 
   private checkStoredAuth(): void {
-    // Check if user is stored in localStorage
-    const storedUser = localStorage.getItem('fitlife-user');
-    if (storedUser) {
+    // Check if user session is stored in localStorage and not expired
+    const storedSession = localStorage.getItem('fitlife-session');
+    if (storedSession) {
       try {
-        const user = JSON.parse(storedUser);
-        this.authState.next({
-          isAuthenticated: true,
-          user: user,
-          loading: false
-        });
+        const session = JSON.parse(storedSession);
+        if (session.expiresAt > Date.now()) {
+          this.authState.next({
+            isAuthenticated: true,
+            user: session.user,
+            loading: false
+          });
+        } else {
+          // Session expired, remove it
+          localStorage.removeItem('fitlife-session');
+        }
       } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem('fitlife-user');
+        console.error('Error parsing stored session:', error);
+        localStorage.removeItem('fitlife-session');
       }
     }
   }
@@ -113,7 +118,7 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem('fitlife-user');
+    localStorage.removeItem('fitlife-session');
     this.authState.next({
       isAuthenticated: false,
       user: null,
@@ -122,7 +127,9 @@ export class AuthService {
   }
 
   private setAuthenticatedUser(user: User): void {
-    localStorage.setItem('fitlife-user', JSON.stringify(user));
+    const expiresAt = Date.now() + (3 * 24 * 60 * 60 * 1000); // 3 days in milliseconds
+    const session = { user, expiresAt };
+    localStorage.setItem('fitlife-session', JSON.stringify(session));
     this.authState.next({
       isAuthenticated: true,
       user: user,
