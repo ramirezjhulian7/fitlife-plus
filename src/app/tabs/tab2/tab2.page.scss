@@ -104,6 +104,25 @@
   --background: #f3f4f6;
   border-radius: 12px;
   margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.video-container {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.workout-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 8px;
 }
 
 .video-placeholder {
@@ -345,7 +364,9 @@
 /* Desktop responsive */
 @media (min-width: 768px) {
   .workouts-container {
-    padding: 0;
+    padding: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
   }
 
   .workouts-content {
@@ -353,11 +374,86 @@
   }
 
   .workout-detail-container {
-    padding: 0;
+    padding: 32px;
+    max-width: 800px;
+    margin: 0 auto;
   }
 
   .detail-content {
     padding: 0;
+  }
+
+  .workouts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    margin: 0;
+  }
+
+  .workout-col {
+    margin-bottom: 0;
+  }
+
+  .workout-card {
+    height: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .workout-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .workout-image {
+    height: 160px;
+  }
+
+  .workout-header {
+    padding: 20px 20px 12px 20px;
+  }
+
+  .workout-title {
+    font-size: 18px;
+  }
+
+  .workout-content {
+    padding: 0 20px 20px 20px;
+  }
+
+  .workout-description {
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
+
+  .workout-meta {
+    margin-bottom: 20px;
+  }
+
+  .filters-section {
+    margin-bottom: 32px;
+  }
+
+  .filters-info {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .filter-popover {
+    --width: 400px;
+  }
+}
+
+/* Large desktop */
+@media (min-width: 1024px) {
+  .workouts-grid {
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 32px;
+  }
+
+  .workout-image {
+    height: 180px;
   }
 }
 
@@ -369,5 +465,41 @@
 
   .workout-detail-container {
     padding: 24px 24px 100px 24px;
+  }
+
+  .workouts-grid {
+    margin: 0 -12px;
+  }
+
+  .workout-col {
+    padding: 0 12px;
+    margin-bottom: 16px;
+  }
+
+  .workout-card {
+    margin: 0;
+  }
+
+  .workout-image {
+    height: 140px;
+  }
+
+  .workout-header {
+    padding: 16px;
+  }
+
+  .workout-content {
+    padding: 0 16px 16px 16px;
+  }
+
+  .filters-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .filter-buttons {
+    width: 100%;
+    justify-content: flex-end;
   }
 }

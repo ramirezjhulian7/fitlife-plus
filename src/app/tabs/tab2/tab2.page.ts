@@ -1,9 +1,10 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonChip, IonGrid, IonRow, IonCol, IonBadge, IonPopover, IonList, IonItem, IonLabel, IonSelect, IonSelectOption } from '@ionic/angular/standalone';
+import { IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonChip, IonBadge, IonPopover, IonList, IonItem, IonLabel, IonSelect, IonSelectOption } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
 import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
 import { WorkoutService, Workout } from '../../services/workout.service';
 import { Router } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-tab2',
@@ -65,14 +66,31 @@ import { Router } from '@angular/router';
               </ion-card-content>
             </ion-card>
 
-            <!-- Video placeholder -->
-            <ion-card class="video-card">
+            <!-- Video del entrenamiento -->
+            <ion-card class="video-card" *ngIf="getSafeVideoUrl()">
+              <ion-card-content>
+                <div class="video-container">
+                  <iframe
+                    [src]="getSafeVideoUrl()"
+                    title="{{ getCurrentWorkout().title }}"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allowfullscreen
+                    class="workout-video">
+                  </iframe>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Video placeholder (si no hay video) -->
+            <ion-card class="video-card" *ngIf="!getSafeVideoUrl()">
               <ion-card-content>
                 <div class="video-placeholder">
                   <div class="video-icon">
                     <ion-icon [icon]="playIcon" size="large"></ion-icon>
                   </div>
-                  <p class="video-text">Video / Animación de ejercicio</p>
+                  <p class="video-text">Video próximamente</p>
                 </div>
               </ion-card-content>
             </ion-card>
@@ -219,53 +237,50 @@ import { Router } from '@angular/router';
             </ion-popover>
 
             <!-- Grid de entrenamientos -->
-            <ion-grid class="workouts-grid">
-              <ion-row>
-                  <ion-col
-                  *ngFor="let workout of filteredWorkouts"
-                  [size]="'12'"
-                  class="workout-col">
-                  <ion-card class="workout-card" (click)="selectWorkout(workout.id)" tappable style="cursor: pointer;">
-                    <!-- Imagen del entrenamiento -->
-                    <div class="workout-image">
-                      <img [src]="workout.image" [alt]="workout.title" class="workout-img" loading="lazy" />
-                      <div class="workout-overlay">
-                        <ion-icon [icon]="flashIcon" size="large"></ion-icon>
-                      </div>
-                    </div>
+            <div class="workouts-grid">
+              <ion-card
+                *ngFor="let workout of filteredWorkouts"
+                class="workout-card"
+                (click)="selectWorkout(workout.id)"
+                tappable>
+                <!-- Imagen del entrenamiento -->
+                <div class="workout-image">
+                  <img [src]="workout.image" [alt]="workout.title" class="workout-img" loading="lazy" />
+                  <div class="workout-overlay">
+                    <ion-icon [icon]="flashIcon" size="large"></ion-icon>
+                  </div>
+                </div>
 
-                    <!-- Contenido -->
-                    <ion-card-header class="workout-header">
-                      <ion-card-title class="workout-title">{{ workout.title }}</ion-card-title>
-                      <ion-badge color="success" class="workout-level">{{ workout.level }}</ion-badge>
-                    </ion-card-header>
+                <!-- Contenido -->
+                <ion-card-header class="workout-header">
+                  <ion-card-title class="workout-title">{{ workout.title }}</ion-card-title>
+                  <ion-badge color="success" class="workout-level">{{ workout.level }}</ion-badge>
+                </ion-card-header>
 
-                    <ion-card-content class="workout-content">
-                      <p class="workout-description">
-                        <span class="duration-highlight">{{ workout.duration }}</span> - {{ workout.description }}
-                      </p>
+                <ion-card-content class="workout-content">
+                  <p class="workout-description">
+                    <span class="duration-highlight">{{ workout.duration }}</span> - {{ workout.description }}
+                  </p>
 
-                      <div class="workout-meta">
-                        <span class="meta-item">
-                          <ion-icon [icon]="timeIcon"></ion-icon>
-                          {{ workout.duration }}
-                        </span>
-                        <span class="meta-separator">•</span>
-                        <span class="meta-item">{{ workout.type }}</span>
-                      </div>
+                  <div class="workout-meta">
+                    <span class="meta-item">
+                      <ion-icon [icon]="timeIcon"></ion-icon>
+                      {{ workout.duration }}
+                    </span>
+                    <span class="meta-separator">•</span>
+                    <span class="meta-item">{{ workout.type }}</span>
+                  </div>
 
-                      <ion-button
-                        fill="outline"
-                        color="success"
-                        expand="block"
-                        class="view-workout-btn">
-                        Ver rutina
-                      </ion-button>
-                    </ion-card-content>
-                  </ion-card>
-                </ion-col>
-              </ion-row>
-            </ion-grid>
+                  <ion-button
+                    fill="outline"
+                    color="success"
+                    expand="block"
+                    class="view-workout-btn">
+                    Ver rutina
+                  </ion-button>
+                </ion-card-content>
+              </ion-card>
+            </div>
           </div>
         </div>
       </ion-content>
@@ -273,7 +288,7 @@ import { Router } from '@angular/router';
   `,
   styleUrls: ['./tab2.page.scss'],
   standalone: true,
-  imports: [IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonChip, IonGrid, IonRow, IonCol, IonBadge, IonPopover, IonList, IonItem, IonLabel, IonSelect, IonSelectOption, CommonModule]
+  imports: [IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonChip, IonBadge, IonPopover, IonList, IonItem, IonLabel, IonSelect, IonSelectOption, CommonModule]
 })
 export class Tab2Page {
   // Estado
@@ -299,13 +314,15 @@ export class Tab2Page {
   levels = signal(['Todos', 'Principiante', 'Intermedio', 'Avanzado']);
   workouts = signal<Workout[]>([]);
 
-  constructor(private workoutService: WorkoutService, private router: Router) {
+  constructor(private workoutService: WorkoutService, private router: Router, private sanitizer: DomSanitizer) {
     this.workouts.set(this.workoutService.getWorkouts());
+    console.log('Workouts loaded:', this.workouts());
 
     // Verificar si hay un workout seleccionado en el estado de navegación
     const navigation = this.router.getCurrentNavigation();
     if (navigation?.extras?.state?.['selectedWorkoutId']) {
       const workoutId = navigation.extras.state['selectedWorkoutId'];
+      console.log('Workout selected from navigation:', workoutId);
       this.selectWorkout(workoutId);
     }
   }
@@ -386,7 +403,16 @@ export class Tab2Page {
 
   getCurrentWorkout() {
     const workoutId = this.selectedWorkout();
+    if (!workoutId) return this.workouts()[0]; // fallback to first workout
     return this.workouts().find(w => w.id === workoutId) || this.workouts()[0];
+  }
+
+  getSafeVideoUrl(): SafeResourceUrl | null {
+    const workout = this.getCurrentWorkout();
+    if (workout && workout.videoUrl) {
+      return this.sanitizer.bypassSecurityTrustResourceUrl(workout.videoUrl);
+    }
+    return null;
   }
 
   goBack() {
@@ -396,9 +422,11 @@ export class Tab2Page {
 
   startWorkout() {
     const workout = this.getCurrentWorkout();
-    this.workoutService.startWorkout(workout);
-    console.log('Starting workout:', workout.title);
-    // Navegar al dashboard para ver el progreso
-    this.router.navigate(['/tabs/dashboard']);
+    if (workout) {
+      this.workoutService.startWorkout(workout);
+      console.log('Starting workout:', workout.title);
+      // Navegar al dashboard para ver el progreso
+      this.router.navigate(['/tabs/dashboard']);
+    }
   }
 }

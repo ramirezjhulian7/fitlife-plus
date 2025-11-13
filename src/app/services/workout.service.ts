@@ -9,6 +9,7 @@ export interface Workout {
   description: string;
   exercises: number;
   image: string;
+  videoUrl?: string;
 }
 
 export interface ActiveWorkout {
@@ -142,7 +143,8 @@ export class WorkoutService {
         type: 'HIIT',
         description: 'Entrenamiento de alta intensidad para quemar calorías rápidamente',
         exercises: 12,
-        image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=200&fit=crop&crop=center'
+        image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=200&fit=crop&crop=center',
+        videoUrl: 'https://www.youtube.com/embed/bwJY3uYbm78'
       },
       {
         id: 2,
@@ -152,7 +154,8 @@ export class WorkoutService {
         type: 'Yoga',
         description: 'Secuencias suaves para mejorar flexibilidad y reducir estrés',
         exercises: 8,
-        image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=200&fit=crop&crop=center'
+        image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=200&fit=crop&crop=center',
+        videoUrl: 'https://www.youtube.com/embed/1J8CRcoFekE'
       },
       {
         id: 3,
@@ -162,7 +165,8 @@ export class WorkoutService {
         type: 'Fuerza',
         description: 'Desarrolla músculos de pecho, espalda, hombros y brazos',
         exercises: 15,
-        image: 'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=400&h=200&fit=crop&crop=center'
+        image: 'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=400&h=200&fit=crop&crop=center',
+        videoUrl: 'https://www.youtube.com/embed/vfmTvsLCy7Q'
       },
       {
         id: 4,
@@ -172,7 +176,8 @@ export class WorkoutService {
         type: 'Cardio',
         description: 'Mejora tu resistencia cardiovascular paso a paso',
         exercises: 10,
-        image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=200&fit=crop&crop=center'
+        image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=200&fit=crop&crop=center',
+        videoUrl: 'https://www.youtube.com/embed/Gx908-caSyI'
       },
     ];
   }
