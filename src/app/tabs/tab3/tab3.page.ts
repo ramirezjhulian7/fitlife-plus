@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { add, cafe, sunny, moon, nutrition, water, trash, close, time } from 'ionicons/icons';
 import { NutritionService, MealItem, Recipe } from '../../services/nutrition.service';
 import { AddFoodModalComponent } from '../../components/add-food-modal/add-food-modal.component';
+import { AuthService } from '../../services/auth.service';
 
 interface Meal {
   id: string;
@@ -998,6 +999,7 @@ interface Meal {
 export class Tab3Page {
   // Servicios
   private nutritionService = inject(NutritionService);
+  private authService = inject(AuthService);
 
   // Estado del modal
   showAddFoodModal = false;
@@ -1063,6 +1065,7 @@ export class Tab3Page {
   ngOnInit() {
     this.updateMealsData();
     this.loadRandomRecipes();
+    this.loadHydrationData();
   }
 
   // Cargar 3 recetas aleatorias
@@ -1178,7 +1181,32 @@ export class Tab3Page {
   setWaterGlasses(glasses: number) {
     this.waterGlasses.set(glasses);
     // Guardar en localStorage para compartir con otras tabs
-    localStorage.setItem('hydrationData', JSON.stringify({ glasses, timestamp: Date.now() }));
+    const userId = this.authService.currentUser?.id;
+    if (userId) {
+      localStorage.setItem(`hydrationData_${userId}`, JSON.stringify({ glasses, timestamp: Date.now() }));
+    }
+  }
+
+  // Método para cargar datos de hidratación
+  private loadHydrationData() {
+    const userId = this.authService.currentUser?.id;
+    if (!userId) return;
+
+    const stored = localStorage.getItem(`hydrationData_${userId}`);
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        // Solo cargar si es del día actual
+        const today = new Date().toDateString();
+        const storedDate = new Date(data.timestamp).toDateString();
+
+        if (today === storedDate) {
+          this.waterGlasses.set(data.glasses);
+        }
+      } catch (error) {
+        console.error('Error loading hydration data:', error);
+      }
+    }
   }
 
   // Método para abrir modal de receta

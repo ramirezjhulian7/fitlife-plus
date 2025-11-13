@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { IonicModule, ModalController } from '@ionic/angular';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-edit-profile-modal',
@@ -20,7 +21,8 @@ export class EditProfileModalComponent implements OnInit {
 
   constructor(
     private formBuilder: FormBuilder,
-    private modalController: ModalController
+    private modalController: ModalController,
+    private authService: AuthService
   ) {
     this.profileForm = this.formBuilder.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
@@ -35,18 +37,21 @@ export class EditProfileModalComponent implements OnInit {
   }
 
   loadCurrentProfile() {
-    const userDataString = localStorage.getItem('userData');
-    if (userDataString) {
-      try {
-        const userData = JSON.parse(userDataString);
-        this.profileForm.patchValue({
-          name: userData.name || '',
-          age: userData.age || '',
-          height: userData.height || '',
-          goal: userData.goal || 'lose_weight'
-        });
-      } catch (error) {
-        console.error('Error loading profile data:', error);
+    const userId = this.authService.currentUser?.id;
+    if (userId) {
+      const userDataString = localStorage.getItem(`userData_${userId}`);
+      if (userDataString) {
+        try {
+          const userData = JSON.parse(userDataString);
+          this.profileForm.patchValue({
+            name: userData.name || '',
+            age: userData.age || '',
+            height: userData.height || '',
+            goal: userData.goal || 'lose_weight'
+          });
+        } catch (error) {
+          console.error('Error loading profile data:', error);
+        }
       }
     }
   }
@@ -54,8 +59,11 @@ export class EditProfileModalComponent implements OnInit {
   async saveProfile() {
     if (this.profileForm.valid) {
       try {
+        const userId = this.authService.currentUser?.id;
+        if (!userId) return;
+
         // Get current userData
-        const userDataString = localStorage.getItem('userData');
+        const userDataString = localStorage.getItem(`userData_${userId}`);
         let userData = {};
 
         if (userDataString) {
@@ -70,7 +78,7 @@ export class EditProfileModalComponent implements OnInit {
         };
 
         // Save to localStorage
-        localStorage.setItem('userData', JSON.stringify(updatedData));
+        localStorage.setItem(`userData_${userId}`, JSON.stringify(updatedData));
 
         // Close modal with success
         await this.modalController.dismiss(updatedData, 'saved');

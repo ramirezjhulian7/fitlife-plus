@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { IonicModule, ModalController } from '@ionic/angular';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-workout-preferences-modal',
@@ -24,7 +25,8 @@ export class WorkoutPreferencesModalComponent implements OnInit {
 
   constructor(
     private formBuilder: FormBuilder,
-    private modalController: ModalController
+    private modalController: ModalController,
+    private authService: AuthService
   ) {
     this.preferencesForm = this.formBuilder.group({
       workoutFrequency: [3, [Validators.required, Validators.min(1), Validators.max(7)]]
@@ -36,15 +38,18 @@ export class WorkoutPreferencesModalComponent implements OnInit {
   }
 
   async loadCurrentPreferences() {
-    const userDataString = localStorage.getItem('userData');
-    if (userDataString) {
-      try {
-        const userData = JSON.parse(userDataString);
-        this.preferencesForm.patchValue({
-          workoutFrequency: userData.workoutFrequency || 3
-        });
-      } catch (error) {
-        console.error('Error loading workout preferences from localStorage:', error);
+    const userId = this.authService.currentUser?.id;
+    if (userId) {
+      const userDataString = localStorage.getItem(`userData_${userId}`);
+      if (userDataString) {
+        try {
+          const userData = JSON.parse(userDataString);
+          this.preferencesForm.patchValue({
+            workoutFrequency: userData.workoutFrequency || 3
+          });
+        } catch (error) {
+          console.error('Error loading workout preferences from localStorage:', error);
+        }
       }
     }
   }
@@ -52,10 +57,13 @@ export class WorkoutPreferencesModalComponent implements OnInit {
   async savePreferences() {
     if (this.preferencesForm.valid) {
       try {
+        const userId = this.authService.currentUser?.id;
+        if (!userId) return;
+
         const workoutFrequency = this.preferencesForm.value.workoutFrequency;
 
         // Get current userData from localStorage
-        const userDataString = localStorage.getItem('userData');
+        const userDataString = localStorage.getItem(`userData_${userId}`);
         let userData = {};
 
         if (userDataString) {
@@ -70,7 +78,7 @@ export class WorkoutPreferencesModalComponent implements OnInit {
         };
 
         // Save to localStorage
-        localStorage.setItem('userData', JSON.stringify(updatedData));
+        localStorage.setItem(`userData_${userId}`, JSON.stringify(updatedData));
 
         await this.modalController.dismiss({ saved: true, workoutFrequency }, 'saved');
       } catch (error) {

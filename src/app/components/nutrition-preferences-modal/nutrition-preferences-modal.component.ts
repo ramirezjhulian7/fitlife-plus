@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, ModalController } from '@ionic/angular';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-nutrition-preferences-modal',
@@ -20,20 +21,26 @@ export class NutritionPreferencesModalComponent implements OnInit {
     'Ninguna restricción'
   ];
 
-  constructor(private modalController: ModalController) {}
+  constructor(
+    private modalController: ModalController,
+    private authService: AuthService
+  ) {}
 
   ngOnInit() {
     this.loadCurrentPreferences();
   }
 
   loadCurrentPreferences() {
-    const userDataString = localStorage.getItem('userData');
-    if (userDataString) {
-      try {
-        const userData = JSON.parse(userDataString);
-        this.selectedPreferences = userData.preferences || [];
-      } catch (error) {
-        console.error('Error loading nutrition preferences from localStorage:', error);
+    const userId = this.authService.currentUser?.id;
+    if (userId) {
+      const userDataString = localStorage.getItem(`userData_${userId}`);
+      if (userDataString) {
+        try {
+          const userData = JSON.parse(userDataString);
+          this.selectedPreferences = userData.preferences || [];
+        } catch (error) {
+          console.error('Error loading nutrition preferences from localStorage:', error);
+        }
       }
     }
   }
@@ -61,8 +68,11 @@ export class NutritionPreferencesModalComponent implements OnInit {
 
   async savePreferences() {
     try {
+      const userId = this.authService.currentUser?.id;
+      if (!userId) return;
+
       // Get current userData from localStorage
-      const userDataString = localStorage.getItem('userData');
+      const userDataString = localStorage.getItem(`userData_${userId}`);
       let userData = {};
 
       if (userDataString) {
@@ -77,7 +87,7 @@ export class NutritionPreferencesModalComponent implements OnInit {
       };
 
       // Save to localStorage
-      localStorage.setItem('userData', JSON.stringify(updatedData));
+      localStorage.setItem(`userData_${userId}`, JSON.stringify(updatedData));
 
       await this.modalController.dismiss({ saved: true, preferences: this.selectedPreferences }, 'saved');
     } catch (error) {

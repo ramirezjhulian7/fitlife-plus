@@ -223,7 +223,8 @@ export class DatabaseService {
 
       if (!existingProfile) {
         // Create profile if it doesn't exist
-        const userDataString = localStorage.getItem('userData');
+        const userDataKey = `userData_${userId}`;
+        const userDataString = localStorage.getItem(userDataKey);
         if (userDataString) {
           const userData = JSON.parse(userDataString);
 
@@ -232,7 +233,7 @@ export class DatabaseService {
             name: userData.name || 'Usuario',
             age: userData.age || 28,
             height: userData.height || 170,
-            weight: userData.weight || this.getCurrentWeight(),
+            weight: userData.weight || this.getCurrentWeight(userId),
             goal: userData.goal || 'lose_weight',
             workout_frequency: userData.workoutFrequency || 3,
             workout_reminder: preferences.workout_reminder ?? true,
@@ -259,9 +260,10 @@ export class DatabaseService {
     }
   }
 
-  private getCurrentWeight(): number {
+  private getCurrentWeight(userId?: number): number {
     // Get current weight from the last entry in weightHistory
-    const weightHistoryString = localStorage.getItem('weightHistory');
+    const weightHistoryKey = userId ? `weightHistory_${userId}` : 'weightHistory';
+    const weightHistoryString = localStorage.getItem(weightHistoryKey);
     if (weightHistoryString) {
       try {
         const weightHistory = JSON.parse(weightHistoryString);
@@ -276,7 +278,8 @@ export class DatabaseService {
     }
 
     // Fallback to userData weight or default
-    const userDataString = localStorage.getItem('userData');
+    const userDataKey = userId ? `userData_${userId}` : 'userData';
+    const userDataString = localStorage.getItem(userDataKey);
     if (userDataString) {
       try {
         const userData = JSON.parse(userDataString);
@@ -296,7 +299,8 @@ export class DatabaseService {
 
       if (!existingProfile) {
         // Create profile if it doesn't exist
-        const userDataString = localStorage.getItem('userData');
+        const userDataKey = `userData_${userId}`;
+        const userDataString = localStorage.getItem(userDataKey);
         if (userDataString) {
           const userData = JSON.parse(userDataString);
 
@@ -305,7 +309,7 @@ export class DatabaseService {
             name: userData.name || 'Usuario',
             age: userData.age || 28,
             height: userData.height || 170,
-            weight: userData.weight || this.getCurrentWeight(),
+            weight: userData.weight || this.getCurrentWeight(userId),
             goal: userData.goal || 'lose_weight',
             workout_frequency: workoutFrequency,
             workout_reminder: true,

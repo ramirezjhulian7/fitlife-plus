@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { AuthService } from './auth.service';
 
 export interface Food {
   id: number;
@@ -334,7 +335,7 @@ export class NutritionService {
     ['dinner', []]
   ]));
 
-  constructor() {
+  constructor(private authService: AuthService) {
     this.calculateRecipeTotals();
     this.loadMealsFromStorage();
   }
@@ -512,15 +513,24 @@ export class NutritionService {
 
   // Persistencia en localStorage
   private saveMealsToStorage(): void {
+    const userId = this.authService.currentUser?.id;
+    if (!userId) return;
+
     const mealsObject: { [key: string]: MealItem[] } = {};
     this.mealsData().forEach((value, key) => {
       mealsObject[key] = value;
     });
-    localStorage.setItem('nutritionMeals', JSON.stringify(mealsObject));
+    localStorage.setItem(`nutritionMeals_${userId}`, JSON.stringify(mealsObject));
   }
 
   private loadMealsFromStorage(): void {
-    const stored = localStorage.getItem('nutritionMeals');
+    const userId = this.authService.currentUser?.id;
+    if (!userId) {
+      this.clearAllMeals();
+      return;
+    }
+
+    const stored = localStorage.getItem(`nutritionMeals_${userId}`);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -536,6 +546,9 @@ export class NutritionService {
         // Fallback to default meals
         this.clearAllMeals();
       }
+    } else {
+      // Initialize with default meals for new user
+      this.clearAllMeals();
     }
   }
 }

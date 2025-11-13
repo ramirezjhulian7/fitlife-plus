@@ -757,10 +757,10 @@ export class Tab4Page implements OnInit, OnDestroy {
     // Cleanup si es necesario
   }
 
-  private loadProgressData() {
+  private async loadProgressData() {
     try {
       // Cargar estadísticas
-      const stats = this.progressService.getProgressStats();
+      const stats = await this.progressService.getProgressStats();
       this.progressStats.set(stats);
 
       // Cargar logros
@@ -813,12 +813,12 @@ export class Tab4Page implements OnInit, OnDestroy {
     this.weightNotes = '';
   }
 
-  saveWeight() {
+  async saveWeight() {
     if (this.newWeight && this.newWeight > 0) {
       this.progressService.addWeightEntry(this.newWeight, this.weightNotes || undefined);
       this.closeWeightModal();
-      setTimeout(() => {
-        this.loadProgressData();
+      setTimeout(async () => {
+        await this.loadProgressData();
       }, 200);
     }
   }

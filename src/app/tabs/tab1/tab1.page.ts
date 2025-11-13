@@ -5,6 +5,8 @@ import { play, flame, water, bulb, restaurant, barChart, time, close, nutrition,
 import { NutritionService, Recipe, MealItem } from '../../services/nutrition.service';
 import { WorkoutService, ActiveWorkout } from '../../services/workout.service';
 import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
+import { DatabaseService } from '../../services/database.service';
 
 @Component({
   selector: 'app-tab1',
@@ -733,13 +735,18 @@ import { Router } from '@angular/router';
     :host ::ng-deep .recipe-modal {
       --width: 90vw;
       --max-width: 500px;
-      --height: 80vh;
+      --height: auto;
+      --max-height: 80vh;
       --border-radius: 16px;
       --box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     }
 
     .recipe-modal-content {
       --background: #ffffff;
+      --padding-top: 0;
+      --padding-bottom: 20px;
+      max-height: 70vh;
+      overflow-y: auto;
     }
 
     .recipe-details {
@@ -982,6 +989,8 @@ export class Tab1Page implements OnInit, OnDestroy {
   // Servicios
   private workoutService = inject(WorkoutService);
   private nutritionService = inject(NutritionService);
+  private authService = inject(AuthService);
+  private databaseService = inject(DatabaseService);
   private router = inject(Router);
   private progressInterval: any;
   private dataUpdateInterval: any;
@@ -1063,7 +1072,8 @@ export class Tab1Page implements OnInit, OnDestroy {
 
     // Inicializar datos de referencia para comparación
     this.lastNutritionData = this.nutritionService.getDailyTotals();
-    this.lastHydrationData = JSON.parse(localStorage.getItem('hydrationData') || '{}');
+    const userId = this.authService.currentUser?.id;
+    this.lastHydrationData = userId ? JSON.parse(localStorage.getItem(`hydrationData_${userId}`) || '{}') : {};
 
     // Actualizar datos cada 2 segundos para sincronizar con otras tabs
     this.dataUpdateInterval = setInterval(() => {
@@ -1101,14 +1111,21 @@ export class Tab1Page implements OnInit, OnDestroy {
   }
 
   private loadUserData() {
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-      try {
-        const parsed = JSON.parse(userData);
-        this.userName.set(parsed.name || 'Usuario');
-      } catch (e) {
-        console.error('Error parsing user data:', e);
-      }
+    const currentUser = this.authService.currentUser;
+    if (currentUser && currentUser.id) {
+      // Obtener el perfil del usuario desde la base de datos
+      this.databaseService.getUserProfile(currentUser.id).then(profile => {
+        if (profile && profile.name) {
+          this.userName.set(profile.name);
+        } else {
+          this.userName.set('Usuario');
+        }
+      }).catch(error => {
+        console.error('Error loading user profile:', error);
+        this.userName.set('Usuario');
+      });
+    } else {
+      this.userName.set('Usuario');
     }
   }
 
@@ -1134,12 +1151,21 @@ export class Tab1Page implements OnInit, OnDestroy {
   }
 
   private loadHydrationData() {
-    // Cargar estado de hidratación desde localStorage
-    const stored = localStorage.getItem('hydrationData');
+    const userId = this.authService.currentUser?.id;
+    if (!userId) return;
+
+    // Cargar estado de hidratación desde localStorage específico del usuario
+    const stored = localStorage.getItem(`hydrationData_${userId}`);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        this.waterGlasses.set(parsed.glasses || 6);
+        // Solo cargar si es del día actual
+        const today = new Date().toDateString();
+        const storedDate = new Date(parsed.timestamp).toDateString();
+
+        if (today === storedDate) {
+          this.waterGlasses.set(parsed.glasses || 6);
+        }
       } catch (e) {
         console.error('Error loading hydration data:', e);
       }
@@ -1155,12 +1181,15 @@ export class Tab1Page implements OnInit, OnDestroy {
     }
 
     // Verificar cambios en hidratación
-    const hydrationData = localStorage.getItem('hydrationData');
-    if (hydrationData) {
-      const parsed = JSON.parse(hydrationData);
-      if (JSON.stringify(parsed) !== JSON.stringify(this.lastHydrationData)) {
-        this.lastHydrationData = parsed;
-        this.loadHydrationData();
+    const userId = this.authService.currentUser?.id;
+    if (userId) {
+      const hydrationData = localStorage.getItem(`hydrationData_${userId}`);
+      if (hydrationData) {
+        const parsed = JSON.parse(hydrationData);
+        if (JSON.stringify(parsed) !== JSON.stringify(this.lastHydrationData)) {
+          this.lastHydrationData = parsed;
+          this.loadHydrationData();
+        }
       }
     }
   }
@@ -1173,8 +1202,11 @@ export class Tab1Page implements OnInit, OnDestroy {
   // Método para actualizar datos de hidratación (llamado desde otras tabs)
   updateHydrationData(glasses: number) {
     this.waterGlasses.set(glasses);
-    // Guardar en localStorage para compartir entre tabs
-    localStorage.setItem('hydrationData', JSON.stringify({ glasses }));
+    // Guardar en localStorage específico del usuario
+    const userId = this.authService.currentUser?.id;
+    if (userId) {
+      localStorage.setItem(`hydrationData_${userId}`, JSON.stringify({ glasses, timestamp: Date.now() }));
+    }
   }
 
   continueWorkout() {

@@ -38,6 +38,23 @@ export class Tab5Page implements OnInit {
     private notificationService: NotificationService
   ) {}
 
+  // Helper methods for user-specific localStorage
+  private getUserDataKey(): string {
+    const userId = this.authService.currentUser?.id;
+    return userId ? `userData_${userId}` : 'userData';
+  }
+
+  private getUserData(): any {
+    const key = this.getUserDataKey();
+    const userDataString = localStorage.getItem(key);
+    return userDataString ? JSON.parse(userDataString) : {};
+  }
+
+  private saveUserData(data: any): void {
+    const key = this.getUserDataKey();
+    localStorage.setItem(key, JSON.stringify(data));
+  }
+
   async ngOnInit() {
     await this.loadUserProfile();
     // Initialize notifications after loading profile
@@ -48,36 +65,33 @@ export class Tab5Page implements OnInit {
     this.isLoading = true;
 
     try {
-      // Get user data from localStorage (userData key)
-      const userDataString = localStorage.getItem('userData');
-      if (userDataString) {
-        const userData = JSON.parse(userDataString);
-        this.userName = userData.name || 'Usuario';
+      // Get user data from localStorage (user-specific key)
+      const userData = this.getUserData();
+      this.userName = userData.name || 'Usuario';
 
-        // Load reminder preferences from localStorage first
-        if (userData.reminders) {
-          this.workoutReminder = userData.reminders.workoutReminder ?? true;
-          this.mealReminder = userData.reminders.mealReminder ?? true;
-          this.waterReminder = userData.reminders.waterReminder ?? false;
-        }
-
-        // Create a profile-like object from userData
-        this.userProfile = {
-          id: 1, // dummy id since we're not using DB for basic data
-          user_id: 1, // dummy user_id
-          name: userData.name || 'Usuario',
-          age: userData.age || 28,
-          height: userData.height || 170,
-          weight: this.getCurrentWeight(), // Get from weightHistory
-          goal: this.mapGoalToDatabase(userData.goal || 'lose_weight'),
-          workout_frequency: userData.workoutFrequency || 3, // Load from localStorage
-          workout_reminder: this.workoutReminder,
-          meal_reminder: this.mealReminder,
-          water_reminder: this.waterReminder,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
+      // Load reminder preferences from localStorage first
+      if (userData.reminders) {
+        this.workoutReminder = userData.reminders.workoutReminder ?? true;
+        this.mealReminder = userData.reminders.mealReminder ?? true;
+        this.waterReminder = userData.reminders.waterReminder ?? false;
       }
+
+      // Create a profile-like object from userData
+      this.userProfile = {
+        id: 1, // dummy id since we're not using DB for basic data
+        user_id: 1, // dummy user_id
+        name: userData.name || 'Usuario',
+        age: userData.age || 28,
+        height: userData.height || 170,
+        weight: this.getCurrentWeight(), // Get from weightHistory
+        goal: this.mapGoalToDatabase(userData.goal || 'lose_weight'),
+        workout_frequency: userData.workoutFrequency || 3, // Load from localStorage
+        workout_reminder: this.workoutReminder,
+        meal_reminder: this.mealReminder,
+        water_reminder: this.waterReminder,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
       // Load reminder preferences from database if user is authenticated (override localStorage if available)
       const currentUser = this.authService.currentUser;
@@ -96,13 +110,13 @@ export class Tab5Page implements OnInit {
           }
 
           // Also update localStorage to keep it in sync
-          const updatedUserData = JSON.parse(localStorage.getItem('userData') || '{}');
+          const updatedUserData = this.getUserData();
           updatedUserData.reminders = {
             workoutReminder: this.workoutReminder,
             mealReminder: this.mealReminder,
             waterReminder: this.waterReminder
           };
-          localStorage.setItem('userData', JSON.stringify(updatedUserData));
+          this.saveUserData(updatedUserData);
         } else {
           // If no profile exists in database, create one from localStorage data
           await this.createProfileIfNeeded(currentUser.id);
@@ -133,10 +147,7 @@ export class Tab5Page implements OnInit {
   private async createProfileIfNeeded(userId: number) {
     try {
       // Get user data from localStorage
-      const userDataString = localStorage.getItem('userData');
-      if (!userDataString) return;
-
-      const userData = JSON.parse(userDataString);
+      const userData = this.getUserData();
 
       // Create profile with current reminder preferences
       const profileData = {
@@ -257,20 +268,13 @@ export class Tab5Page implements OnInit {
       }
 
       // Also save reminder preferences to localStorage
-      const userDataString = localStorage.getItem('userData');
-      if (userDataString) {
-        try {
-          const userData = JSON.parse(userDataString);
-          userData.reminders = {
-            workoutReminder: this.workoutReminder,
-            mealReminder: this.mealReminder,
-            waterReminder: this.waterReminder
-          };
-          localStorage.setItem('userData', JSON.stringify(userData));
-        } catch (error) {
-          console.error('Error updating localStorage with reminders:', error);
-        }
-      }
+      const userData = this.getUserData();
+      userData.reminders = {
+        workoutReminder: this.workoutReminder,
+        mealReminder: this.mealReminder,
+        waterReminder: this.waterReminder
+      };
+      this.saveUserData(userData);
 
       // Request notification permissions if not already granted
       const hasPermission = await this.notificationService.checkPermissions();
@@ -413,18 +417,9 @@ export class Tab5Page implements OnInit {
 
   getUserEmail(): string {
     // Get user name from userData in localStorage
-    const userDataString = localStorage.getItem('userData');
-    if (userDataString) {
-      try {
-        const userData = JSON.parse(userDataString);
-        const userName = userData.name || 'usuario';
-        return `${userName.toLowerCase().replace(/\s+/g, '')}@email.com`;
-      } catch (error) {
-        console.error('Error parsing user data for email:', error);
-      }
-    }
-
-    return 'usuario@email.com';
+    const userData = this.getUserData();
+    const userName = userData.name || 'usuario';
+    return `${userName.toLowerCase().replace(/\s+/g, '')}@email.com`;
   }
 
   getGoalText(): string {
@@ -456,30 +451,23 @@ export class Tab5Page implements OnInit {
   }
 
   getNutritionPreferencesText(): string {
-    const userDataString = localStorage.getItem('userData');
-    if (userDataString) {
-      try {
-        const userData = JSON.parse(userDataString);
-        const preferences = userData.preferences || [];
+    const userData = this.getUserData();
+    const preferences = userData.preferences || [];
 
-        if (preferences.length === 0) {
-          return 'Sin preferencias';
-        }
-        if (preferences.length === 1) {
-          return preferences[0];
-        }
-        return `${preferences.length} preferencias`;
-      } catch (error) {
-        console.error('Error parsing nutrition preferences:', error);
-      }
+    if (preferences.length === 0) {
+      return 'Sin preferencias';
     }
-
-    return 'Sin preferencias';
+    if (preferences.length === 1) {
+      return preferences[0];
+    }
+    return `${preferences.length} preferencias`;
   }
 
   getCurrentWeight(): number {
     // Get current weight from the last entry in weightHistory
-    const weightHistoryString = localStorage.getItem('weightHistory');
+    const userId = this.authService.currentUser?.id;
+    const weightHistoryKey = userId ? `weightHistory_${userId}` : 'weightHistory';
+    const weightHistoryString = localStorage.getItem(weightHistoryKey);
     if (weightHistoryString) {
       try {
         const weightHistory = JSON.parse(weightHistoryString);
@@ -494,16 +482,7 @@ export class Tab5Page implements OnInit {
     }
 
     // Fallback to userData weight or default
-    const userDataString = localStorage.getItem('userData');
-    if (userDataString) {
-      try {
-        const userData = JSON.parse(userDataString);
-        return userData.weight || 73.2;
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-      }
-    }
-
-    return 73.2; // Default weight
+    const userData = this.getUserData();
+    return userData.weight || 73.2;
   }
 }

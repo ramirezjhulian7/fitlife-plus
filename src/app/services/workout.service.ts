@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { AuthService } from './auth.service';
 
 export interface Workout {
   id: number;
@@ -28,7 +29,7 @@ export class WorkoutService {
   // Signal para el entrenamiento activo
   private activeWorkoutSignal = signal<ActiveWorkout | null>(null);
 
-  constructor() {
+  constructor(private authService: AuthService) {
     this.loadActiveWorkout();
   }
 
@@ -54,7 +55,10 @@ export class WorkoutService {
   // Detener el entrenamiento activo
   stopWorkout(): void {
     this.activeWorkoutSignal.set(null);
-    localStorage.removeItem(this.ACTIVE_WORKOUT_KEY);
+    const userId = this.authService.currentUser?.id;
+    if (userId) {
+      localStorage.removeItem(`${this.ACTIVE_WORKOUT_KEY}_${userId}`);
+    }
   }
 
   // Obtener el progreso del entrenamiento (0-1)
@@ -96,8 +100,11 @@ export class WorkoutService {
 
   // Guardar en localStorage
   private saveActiveWorkout(workout: ActiveWorkout): void {
+    const userId = this.authService.currentUser?.id;
+    if (!userId) return;
+
     try {
-      localStorage.setItem(this.ACTIVE_WORKOUT_KEY, JSON.stringify({
+      localStorage.setItem(`${this.ACTIVE_WORKOUT_KEY}_${userId}`, JSON.stringify({
         ...workout,
         startTime: workout.startTime.toISOString()
       }));
@@ -108,8 +115,11 @@ export class WorkoutService {
 
   // Cargar desde localStorage
   private loadActiveWorkout(): void {
+    const userId = this.authService.currentUser?.id;
+    if (!userId) return;
+
     try {
-      const saved = localStorage.getItem(this.ACTIVE_WORKOUT_KEY);
+      const saved = localStorage.getItem(`${this.ACTIVE_WORKOUT_KEY}_${userId}`);
       if (saved) {
         const parsed = JSON.parse(saved);
         const activeWorkout: ActiveWorkout = {

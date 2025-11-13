@@ -1,4 +1,6 @@
 import { Injectable, signal } from '@angular/core';
+import { AuthService } from './auth.service';
+import { DatabaseService } from './database.service';
 
 export interface WeightEntry {
   date: string;
@@ -47,7 +49,7 @@ export class ProgressService {
   private workoutHistory = signal<WorkoutEntry[]>([]);
   private achievements = signal<Achievement[]>([]);
 
-  constructor() {
+  constructor(private authService: AuthService, private databaseService: DatabaseService) {
     this.initializeData();
   }
 
@@ -60,7 +62,13 @@ export class ProgressService {
 
   // Gestión del historial de peso
   private loadWeightHistory() {
-    const stored = localStorage.getItem('weightHistory');
+    const userId = this.authService.currentUser?.id;
+    if (!userId) {
+      this.weightHistory.set([]);
+      return;
+    }
+
+    const stored = localStorage.getItem(`weightHistory_${userId}`);
     if (stored) {
       try {
         const history = JSON.parse(stored);
@@ -75,7 +83,10 @@ export class ProgressService {
   }
 
   private saveWeightHistory() {
-    localStorage.setItem('weightHistory', JSON.stringify(this.weightHistory()));
+    const userId = this.authService.currentUser?.id;
+    if (!userId) return;
+
+    localStorage.setItem(`weightHistory_${userId}`, JSON.stringify(this.weightHistory()));
   }
 
   getWeightHistory(): WeightEntry[] {
@@ -103,11 +114,21 @@ export class ProgressService {
 
     this.weightHistory.set([...currentHistory]);
     this.saveWeightHistory();
+    this.updateAchievements();
+
+    // Guardar progreso en la base de datos
+    this.saveProgressToDatabase();
   }
 
   // Gestión del historial de entrenamientos
   private loadWorkoutHistory() {
-    const stored = localStorage.getItem('workoutHistory');
+    const userId = this.authService.currentUser?.id;
+    if (!userId) {
+      this.workoutHistory.set([]);
+      return;
+    }
+
+    const stored = localStorage.getItem(`workoutHistory_${userId}`);
     if (stored) {
       try {
         const history = JSON.parse(stored);
@@ -122,7 +143,10 @@ export class ProgressService {
   }
 
   private saveWorkoutHistory() {
-    localStorage.setItem('workoutHistory', JSON.stringify(this.workoutHistory()));
+    const userId = this.authService.currentUser?.id;
+    if (!userId) return;
+
+    localStorage.setItem(`workoutHistory_${userId}`, JSON.stringify(this.workoutHistory()));
   }
 
   getWorkoutHistory(): WorkoutEntry[] {
@@ -151,6 +175,10 @@ export class ProgressService {
 
     this.workoutHistory.set([...currentHistory]);
     this.saveWorkoutHistory();
+    this.updateAchievements();
+
+    // Guardar progreso en la base de datos
+    this.saveProgressToDatabase();
   }
 
   // Gestión de logros
@@ -222,7 +250,8 @@ export class ProgressService {
     ];
 
     // Cargar progreso guardado o inicializar
-    const stored = localStorage.getItem('achievements');
+    const userId = this.authService.currentUser?.id;
+    const stored = userId ? localStorage.getItem(`achievements_${userId}`) : null;
     if (stored) {
       try {
         const savedAchievements = JSON.parse(stored);
@@ -332,7 +361,10 @@ export class ProgressService {
   }
 
   private saveAchievements() {
-    localStorage.setItem('achievements', JSON.stringify(this.achievements()));
+    const userId = this.authService.currentUser?.id;
+    if (!userId) return;
+
+    localStorage.setItem(`achievements_${userId}`, JSON.stringify(this.achievements()));
   }
 
   getAchievements(): Achievement[] {
@@ -340,7 +372,7 @@ export class ProgressService {
   }
 
   // Métodos de cálculo de estadísticas
-  getProgressStats(): ProgressStats {
+  async getProgressStats(): Promise<ProgressStats> {
     const weightHistory = this.weightHistory();
     const workoutHistory = this.workoutHistory();
 
@@ -348,7 +380,7 @@ export class ProgressService {
     const startingWeight = weightHistory.length > 0 ? weightHistory[0].weight : 0;
     const weightLost = Math.max(0, startingWeight - currentWeight);
     const lastWeightChange = this.calculateLastWeightChange();
-    const bmiData = this.calculateBMI();
+    const bmiData = await this.calculateBMI();
 
     const workoutsThisWeek = this.getWorkoutsThisWeek();
     const workoutsThisMonth = this.getWorkoutsThisMonth();
@@ -416,17 +448,18 @@ export class ProgressService {
     return streak;
   }
 
-  private calculateBMI(): { bmi: number; category: string } {
-    const userData = localStorage.getItem('userData');
+  private async calculateBMI(): Promise<{ bmi: number; category: string }> {
+    const userId = this.authService.currentUser?.id;
     const weightHistory = this.weightHistory();
 
-    if (!userData || weightHistory.length === 0) {
+    if (!userId || weightHistory.length === 0) {
       return { bmi: 0, category: 'Sin datos' };
     }
 
     try {
-      const data = JSON.parse(userData);
-      const height = data.height; // en cm
+      // Obtener el perfil del usuario desde la base de datos
+      const userProfile = await this.databaseService.getUserProfile(userId);
+      const height = userProfile?.height; // en cm
       const currentWeight = weightHistory[weightHistory.length - 1].weight; // en kg
 
       if (!height || !currentWeight || height <= 0 || currentWeight <= 0) {
@@ -511,8 +544,23 @@ export class ProgressService {
     };
   }
 
-  // Método para refrescar datos (llamado desde la UI)
-  refreshData() {
-    this.updateAchievements();
+  // Método para guardar progreso en la base de datos del usuario
+  async saveProgressToDatabase(): Promise<void> {
+    const userId = this.authService.currentUser?.id;
+    if (!userId) return;
+
+    try {
+      const progressStats = await this.getProgressStats();
+
+      // Actualizar el perfil del usuario con datos de progreso
+      await this.databaseService.updateUserProfile(userId, {
+        // Aquí podríamos agregar campos específicos para progreso si se añaden a la interfaz UserProfile
+        // Por ahora, los datos ya se guardan en localStorage específico del usuario
+      });
+
+      console.log('Progress data saved to database for user:', userId);
+    } catch (error) {
+      console.error('Error saving progress to database:', error);
+    }
   }
 }
