@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { NgIf } from '@angular/common';
-import { StatusBar } from '@capacitor/status-bar';
+import { StatusBar, StatusBarInfo } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 
 @Component({
   selector: 'app-root',
@@ -15,10 +16,13 @@ export class AppComponent {
   }
 
   private async configureStatusBar() {
-    try {
-      await StatusBar.setOverlaysWebView({ overlay: false });
-    } catch (error) {
-      console.log('StatusBar not available', error);
+    // Only configure status bar on native platforms
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await StatusBar.setOverlaysWebView({ overlay: false });
+      } catch (error) {
+        console.log('StatusBar configuration failed', error);
+      }
     }
   }
 }

@@ -1,11 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-tab3',
   template: `
-    <ion-content [fullscreen]="true">
+    <ion-content [fullscreen]="isDesktop()">
       <ion-header [collapse]="true">
         <ion-toolbar>
           <ion-title>Nutrición</ion-title>
@@ -32,10 +32,25 @@ import { CommonModule } from '@angular/common';
     p {
       color: #6b7280;
     }
+
+    /* Mobile responsive */
+    @media (max-width: 767px) {
+      .container {
+        padding: 20px 20px 100px 20px; /* Extra padding bottom for tabs */
+      }
+    }
   `],
   standalone: true,
   imports: [IonContent, IonHeader, IonTitle, IonToolbar, CommonModule]
 })
-export class Tab3Page {
+export class Tab3Page implements OnInit {
+  isDesktop = signal(false);
 
+  ngOnInit() {
+    this.checkDeviceType();
+  }
+
+  private checkDeviceType() {
+    this.isDesktop.set(window.innerWidth >= 768);
+  }
 }

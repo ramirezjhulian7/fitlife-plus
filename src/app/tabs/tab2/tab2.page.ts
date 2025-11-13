@@ -8,7 +8,7 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
   template: `
     <!-- Vista de detalle del entrenamiento -->
     <ng-container *ngIf="selectedWorkout() !== null || showDetail()">
-      <ion-content [fullscreen]="true" class="workout-detail-bg">
+      <ion-content [fullscreen]="isDesktop()" class="workout-detail-bg">
         <div class="workout-detail-container">
           <!-- Header con gradiente -->
           <div class="workout-header">
@@ -89,7 +89,7 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
 
     <!-- Vista de lista de entrenamientos -->
     <ng-container *ngIf="selectedWorkout() === null && !showDetail()">
-      <ion-content [fullscreen]="true" class="workouts-bg">
+      <ion-content [fullscreen]="isDesktop()" class="workouts-bg">
         <div class="workouts-container">
           <!-- Header con gradiente -->
           <div class="workouts-header">
@@ -176,6 +176,7 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
 
     .workout-detail-container {
       min-height: 100vh;
+      padding: 24px;
     }
 
     .workout-header {
@@ -318,6 +319,7 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
 
     .workouts-container {
       min-height: 100vh;
+      padding: 24px;
     }
 
     .workouts-header {
@@ -450,6 +452,17 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
 
       .detail-content {
         padding: 0;
+      }
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 767px) {
+      .workouts-container {
+        padding: 24px 24px 100px 24px; /* Extra padding bottom for tabs */
+      }
+
+      .workout-detail-container {
+        padding: 24px 24px 100px 24px; /* Extra padding bottom for tabs */
       }
     }
   `],

@@ -6,7 +6,7 @@ import { play, flame, water, bulb, restaurant, barChart } from 'ionicons/icons';
 @Component({
   selector: 'app-tab1',
   template: `
-    <ion-content [fullscreen]="true" class="dashboard-bg">
+    <ion-content [fullscreen]="isDesktop()" class="dashboard-bg">
       <div class="dashboard-container">
         <!-- Header con gradiente -->
         <div class="header-gradient">
@@ -474,6 +474,13 @@ import { play, flame, water, bulb, restaurant, barChart } from 'ionicons/icons';
       .content-grid {
         grid-template-columns: 1fr 1fr;
         gap: 24px;
+      }
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 767px) {
+      .dashboard-container {
+        padding: 24px 24px 100px 24px; /* Extra padding bottom for tabs */
       }
     }
   `],
