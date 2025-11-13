@@ -1,0 +1,11 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Campana base -->
+  <path d="M12 2C10.896 2 10 2.896 10 4V5.172C7.776 5.694 6 7.674 6 10V16L4 18V19H20V18L18 16V10C18 7.674 16.224 5.694 14 5.172V4C14 2.896 13.104 2 12 2Z" fill="currentColor"/>
+  <!-- Badana de la campana -->
+  <path d="M9 21C9 19.343 10.343 18 12 18C13.657 18 15 19.343 15 21" fill="currentColor"/>
+  <!-- Símbolo de prueba (flecha circular) -->
+  <circle cx="16" cy="6" r="3" fill="currentColor" opacity="0.8"/>
+  <path d="M14.5 6L15.5 5L17.5 7" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg></content>
+<parameter name="filePath">d:\LaU\repos\FitLife\fitlife-plus\src\assets\custom-icons\notification-test.svg</content>
+<parameter name="filePath">d:\LaU\repos\FitLife\fitlife-plus\src\assets\custom-icons\notification-test.svg

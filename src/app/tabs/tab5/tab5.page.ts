@@ -10,6 +10,7 @@ import { EditProfileModalComponent } from '../../components/edit-profile-modal/e
 import { WorkoutPreferencesModalComponent } from '../../components/workout-preferences-modal/workout-preferences-modal.component';
 import { NutritionPreferencesModalComponent } from '../../components/nutrition-preferences-modal/nutrition-preferences-modal.component';
 import { NotificationService } from '../../services/notification';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 @Component({
   selector: 'app-tab5',
@@ -301,6 +302,102 @@ export class Tab5Page implements OnInit {
       console.error('Error updating reminder preferences:', error);
       const toast = await this.toastController.create({
         message: 'Error al actualizar recordatorios',
+        duration: 2000,
+        position: 'bottom',
+        color: 'danger'
+      });
+      await toast.present();
+    }
+  }
+
+  async testWorkoutNotification() {
+    try {
+      await LocalNotifications.schedule({
+        notifications: [{
+          id: 999,
+          title: '¡Prueba de Notificación!',
+          body: 'Esta es una notificación de prueba para recordatorios de entrenamiento.',
+          schedule: { at: new Date(Date.now() + 1000) }, // Show in 1 second
+          actionTypeId: 'workout',
+          extra: { type: 'test' }
+        }]
+      });
+
+      const toast = await this.toastController.create({
+        message: 'Notificación de entrenamiento enviada',
+        duration: 2000,
+        position: 'bottom',
+        color: 'success'
+      });
+      await toast.present();
+    } catch (error) {
+      console.error('Error testing workout notification:', error);
+      const toast = await this.toastController.create({
+        message: 'Error al enviar notificación de prueba',
+        duration: 2000,
+        position: 'bottom',
+        color: 'danger'
+      });
+      await toast.present();
+    }
+  }
+
+  async testMealNotification() {
+    try {
+      await LocalNotifications.schedule({
+        notifications: [{
+          id: 1000,
+          title: '¡Prueba de Notificación!',
+          body: 'Esta es una notificación de prueba para recordatorios de comidas.',
+          schedule: { at: new Date(Date.now() + 1000) }, // Show in 1 second
+          actionTypeId: 'meal',
+          extra: { type: 'test' }
+        }]
+      });
+
+      const toast = await this.toastController.create({
+        message: 'Notificación de comida enviada',
+        duration: 2000,
+        position: 'bottom',
+        color: 'success'
+      });
+      await toast.present();
+    } catch (error) {
+      console.error('Error testing meal notification:', error);
+      const toast = await this.toastController.create({
+        message: 'Error al enviar notificación de prueba',
+        duration: 2000,
+        position: 'bottom',
+        color: 'danger'
+      });
+      await toast.present();
+    }
+  }
+
+  async testWaterNotification() {
+    try {
+      await LocalNotifications.schedule({
+        notifications: [{
+          id: 1001,
+          title: '¡Prueba de Notificación!',
+          body: 'Esta es una notificación de prueba para recordatorios de hidratación.',
+          schedule: { at: new Date(Date.now() + 1000) }, // Show in 1 second
+          actionTypeId: 'water',
+          extra: { type: 'test' }
+        }]
+      });
+
+      const toast = await this.toastController.create({
+        message: 'Notificación de hidratación enviada',
+        duration: 2000,
+        position: 'bottom',
+        color: 'success'
+      });
+      await toast.present();
+    } catch (error) {
+      console.error('Error testing water notification:', error);
+      const toast = await this.toastController.create({
+        message: 'Error al enviar notificación de prueba',
         duration: 2000,
         position: 'bottom',
         color: 'danger'
