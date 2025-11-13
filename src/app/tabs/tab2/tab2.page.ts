@@ -1,7 +1,9 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonChip, IonGrid, IonRow, IonCol, IonBadge } from '@ionic/angular/standalone';
+import { IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonChip, IonGrid, IonRow, IonCol, IonBadge, IonPopover, IonList, IonItem, IonLabel, IonSelect, IonSelectOption } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
 import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
+import { WorkoutService, Workout } from '../../services/workout.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-tab2',
@@ -118,12 +120,103 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
           <div class="workouts-content">
             <!-- Filtros -->
             <div class="filters-section">
-              <p class="filters-text">Filtros: Duración / Nivel / Tipo</p>
-              <ion-button fill="outline" color="success" size="small">
-                <ion-icon slot="start" [icon]="filterIcon"></ion-icon>
-                Filtrar
-              </ion-button>
+              <div class="filters-info">
+                <p class="filters-text">
+                  <span *ngIf="!hasActiveFilters()">Filtros disponibles</span>
+                  <span *ngIf="hasActiveFilters()" class="active-filters">
+                    Filtros activos: {{ getActiveFiltersText() }}
+                  </span>
+                </p>
+                <div class="filter-buttons">
+                  <ion-button
+                    *ngIf="hasActiveFilters()"
+                    fill="outline"
+                    color="medium"
+                    size="small"
+                    (click)="clearFilters()">
+                    Limpiar
+                  </ion-button>
+                  <ion-button
+                    fill="outline"
+                    color="success"
+                    size="small"
+                    (click)="toggleFilters()">
+                    <ion-icon slot="start" [icon]="filterIcon"></ion-icon>
+                    Filtrar
+                  </ion-button>
+                </div>
+              </div>
             </div>
+
+            <!-- Popover de filtros -->
+            <ion-popover [isOpen]="showFilters()" (didDismiss)="showFilters.set(false)">
+              <ng-template>
+                <ion-content class="filter-popover">
+                  <div class="filter-header">
+                    <h3>Filtros de búsqueda</h3>
+                  </div>
+
+                  <ion-list>
+                    <ion-item>
+                      <ion-label>Duración</ion-label>
+                      <ion-select
+                        [value]="durationFilter()"
+                        (ionChange)="setDurationFilter($event.detail.value)"
+                        placeholder="Seleccionar">
+                        <ion-select-option
+                          *ngFor="let duration of durations()"
+                          [value]="duration">
+                          {{ duration }}
+                        </ion-select-option>
+                      </ion-select>
+                    </ion-item>
+
+                    <ion-item>
+                      <ion-label>Nivel</ion-label>
+                      <ion-select
+                        [value]="levelFilter()"
+                        (ionChange)="setLevelFilter($event.detail.value)"
+                        placeholder="Seleccionar">
+                        <ion-select-option
+                          *ngFor="let level of levels()"
+                          [value]="level">
+                          {{ level }}
+                        </ion-select-option>
+                      </ion-select>
+                    </ion-item>
+
+                    <ion-item>
+                      <ion-label>Tipo</ion-label>
+                      <ion-select
+                        [value]="activeCategory()"
+                        (ionChange)="setActiveCategory($event.detail.value)"
+                        placeholder="Seleccionar">
+                        <ion-select-option
+                          *ngFor="let category of categories()"
+                          [value]="category">
+                          {{ category }}
+                        </ion-select-option>
+                      </ion-select>
+                    </ion-item>
+                  </ion-list>
+
+                  <div class="filter-actions">
+                    <ion-button
+                      fill="clear"
+                      color="medium"
+                      (click)="clearFilters()">
+                      Limpiar filtros
+                    </ion-button>
+                    <ion-button
+                      fill="solid"
+                      color="success"
+                      (click)="showFilters.set(false)">
+                      Aplicar
+                    </ion-button>
+                  </div>
+                </ion-content>
+              </ng-template>
+            </ion-popover>
 
             <!-- Grid de entrenamientos -->
             <ion-grid class="workouts-grid">
@@ -133,9 +226,12 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
                   [size]="'12'"
                   class="workout-col">
                   <ion-card class="workout-card" (click)="selectWorkout(workout.id)" tappable style="cursor: pointer;">
-                    <!-- Imagen placeholder -->
+                    <!-- Imagen del entrenamiento -->
                     <div class="workout-image">
-                      <ion-icon [icon]="flashIcon" size="large"></ion-icon>
+                      <img [src]="workout.image" [alt]="workout.title" class="workout-img" loading="lazy" />
+                      <div class="workout-overlay">
+                        <ion-icon [icon]="flashIcon" size="large"></ion-icon>
+                      </div>
                     </div>
 
                     <!-- Contenido -->
@@ -145,6 +241,10 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
                     </ion-card-header>
 
                     <ion-card-content class="workout-content">
+                      <p class="workout-description">
+                        <span class="duration-highlight">{{ workout.duration }}</span> - {{ workout.description }}
+                      </p>
+
                       <div class="workout-meta">
                         <span class="meta-item">
                           <ion-icon [icon]="timeIcon"></ion-icon>
@@ -171,305 +271,20 @@ import { arrowBack, play, time, flash, filter } from 'ionicons/icons';
       </ion-content>
     </ng-container>
   `,
-  styles: [`
-    .workout-detail-bg {
-      --background: #f8fafc;
-    }
-
-    .workout-detail-container {
-      padding: 24px;
-    }
-
-    .workout-header {
-      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-      color: white;
-      padding: 24px;
-      border-radius: 16px;
-      margin-bottom: 24px;
-    }
-
-    .back-button {
-      --color: white;
-      margin-bottom: 16px;
-      --padding-start: 0;
-    }
-
-    .workout-title {
-      font-size: 24px;
-      font-weight: 700;
-      margin: 0 0 12px 0;
-    }
-
-    .workout-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      font-size: 14px;
-      opacity: 0.9;
-    }
-
-    .meta-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .meta-separator {
-      color: rgba(255, 255, 255, 0.7);
-    }
-
-    .detail-content {
-      padding: 0 24px 24px 24px;
-    }
-
-    .description-card {
-      --background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      margin-bottom: 16px;
-    }
-
-    .description-title {
-      color: #16a34a;
-      font-size: 18px;
-    }
-
-    .description-text {
-      color: #374151;
-      margin-bottom: 16px;
-      line-height: 1.5;
-    }
-
-    .objectives-title {
-      color: #16a34a;
-      font-size: 16px;
-      font-weight: 600;
-      margin: 16px 0 12px 0;
-    }
-
-    .objectives-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .objective-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      margin-bottom: 8px;
-      font-size: 14px;
-      color: #374151;
-    }
-
-    .objective-bullet {
-      color: #16a34a;
-      font-weight: bold;
-      margin-top: 2px;
-    }
-
-    .video-card {
-      --background: #f3f4f6;
-      border-radius: 12px;
-      margin-bottom: 24px;
-    }
-
-    .video-placeholder {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 48px 24px;
-      text-align: center;
-    }
-
-    .video-icon {
-      width: 64px;
-      height: 64px;
-      background: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 12px;
-    }
-
-    .video-icon ion-icon {
-      color: #16a34a;
-    }
-
-    .video-text {
-      color: #6b7280;
-      font-size: 14px;
-    }
-
-    .start-button {
-      --border-radius: 8px;
-      height: 48px;
-      font-weight: 600;
-    }
-
-    .workouts-bg {
-      --background: #f8fafc;
-    }
-
-    .workouts-container {
-      padding: 24px;
-    }
-
-    .workouts-header {
-      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-      color: white;
-      padding: 24px;
-      border-radius: 16px;
-      margin-bottom: 24px;
-    }
-
-    .header-title {
-      font-size: 24px;
-      font-weight: 700;
-      margin: 0 0 16px 0;
-    }
-
-    .categories-scroll {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-    }
-
-    .category-chip {
-      flex-shrink: 0;
-      --background: rgba(255, 255, 255, 0.2);
-      --color: white;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-    }
-
-    .category-chip.chip-outline {
-      --background: transparent;
-      --color: white;
-    }
-
-    .workouts-content {
-      padding: 0 24px 24px 24px;
-    }
-
-    .filters-section {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .filters-text {
-      font-size: 14px;
-      color: #6b7280;
-      margin: 0;
-    }
-
-    .workouts-grid {
-      margin: 0;
-    }
-
-    .workout-col {
-      margin-bottom: 16px;
-    }
-
-    .workout-card {
-      --background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-
-    .workout-card:hover {
-      transform: translateY(-2px);
-    }
-
-    .workout-image {
-      height: 120px;
-      background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .workout-image ion-icon {
-      color: #16a34a;
-    }
-
-    .workout-header {
-      padding: 16px 16px 8px 16px;
-    }
-
-    .workout-title {
-      color: #16a34a;
-      font-size: 16px;
-      margin-bottom: 8px;
-    }
-
-    .workout-level {
-      font-size: 12px;
-    }
-
-    .workout-content {
-      padding: 0 16px 16px 16px;
-    }
-
-    .workout-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 16px;
-      font-size: 14px;
-      color: #6b7280;
-    }
-
-    .view-workout-btn {
-      --border-radius: 8px;
-    }
-
-    /* Desktop responsive */
-    @media (min-width: 768px) {
-      .workouts-container {
-        padding: 0;
-      }
-
-      .workouts-content {
-        padding: 0;
-      }
-
-      .workout-detail-container {
-        padding: 0;
-      }
-
-      .detail-content {
-        padding: 0;
-      }
-    }
-
-    /* Mobile responsive */
-    @media (max-width: 767px) {
-      .workouts-container {
-        padding: 24px 24px 100px 24px; /* Extra padding bottom for tabs */
-      }
-
-      .workout-detail-container {
-        padding: 24px 24px 100px 24px; /* Extra padding bottom for tabs */
-      }
-    }
-  `],
+  styleUrls: ['./tab2.page.scss'],
   standalone: true,
-  imports: [IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonChip, IonGrid, IonRow, IonCol, IonBadge, CommonModule]
+  imports: [IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonChip, IonGrid, IonRow, IonCol, IonBadge, IonPopover, IonList, IonItem, IonLabel, IonSelect, IonSelectOption, CommonModule]
 })
 export class Tab2Page {
   // Estado
   selectedWorkout = signal<number | null>(null);
   showDetail = signal(false);
   activeCategory = signal('Todos');
+
+  // Filtros
+  durationFilter = signal<string>('Todas');
+  levelFilter = signal<string>('Todos');
+  showFilters = signal(false);
 
   // Iconos
   arrowBackIcon = arrowBack;
@@ -480,56 +295,89 @@ export class Tab2Page {
 
   // Datos
   categories = signal(['Todos', 'Fuerza', 'Cardio', 'Yoga', 'HIIT']);
+  durations = signal(['Todas', '15 min', '20 min', '25 min', '30 min', '45 min']);
+  levels = signal(['Todos', 'Principiante', 'Intermedio', 'Avanzado']);
+  workouts = signal<Workout[]>([]);
 
-  workouts = signal([
-    {
-      id: 1,
-      title: 'HIIT Quema Grasa',
-      duration: '30 min',
-      level: 'Intermedio',
-      type: 'HIIT',
-      description: 'Entrenamiento de alta intensidad para quemar calorías rápidamente',
-      exercises: 12,
-    },
-    {
-      id: 2,
-      title: 'Yoga para Principiantes',
-      duration: '20 min',
-      level: 'Principiante',
-      type: 'Yoga',
-      description: 'Secuencias suaves para mejorar flexibilidad y reducir estrés',
-      exercises: 8,
-    },
-    {
-      id: 3,
-      title: 'Fuerza Tren Superior',
-      duration: '45 min',
-      level: 'Avanzado',
-      type: 'Fuerza',
-      description: 'Desarrolla músculos de pecho, espalda, hombros y brazos',
-      exercises: 15,
-    },
-    {
-      id: 4,
-      title: 'Cardio Principiante',
-      duration: '25 min',
-      level: 'Principiante',
-      type: 'Cardio',
-      description: 'Mejora tu resistencia cardiovascular paso a paso',
-      exercises: 10,
-    },
-  ]);
+  constructor(private workoutService: WorkoutService, private router: Router) {
+    this.workouts.set(this.workoutService.getWorkouts());
+
+    // Verificar si hay un workout seleccionado en el estado de navegación
+    const navigation = this.router.getCurrentNavigation();
+    if (navigation?.extras?.state?.['selectedWorkoutId']) {
+      const workoutId = navigation.extras.state['selectedWorkoutId'];
+      this.selectWorkout(workoutId);
+    }
+  }
 
   get filteredWorkouts() {
+    let filtered = this.workouts();
+
+    // Filtro por categoría/tipo
     const category = this.activeCategory();
-    if (category === 'Todos') {
-      return this.workouts();
+    if (category !== 'Todos') {
+      filtered = filtered.filter(workout => workout.type === category);
     }
-    return this.workouts().filter(workout => workout.type === category);
+
+    // Filtro por duración
+    const duration = this.durationFilter();
+    if (duration !== 'Todas') {
+      filtered = filtered.filter(workout => workout.duration === duration);
+    }
+
+    // Filtro por nivel
+    const level = this.levelFilter();
+    if (level !== 'Todos') {
+      filtered = filtered.filter(workout => workout.level === level);
+    }
+
+    return filtered;
   }
 
   setActiveCategory(category: string) {
     this.activeCategory.set(category);
+  }
+
+  setDurationFilter(duration: string) {
+    this.durationFilter.set(duration);
+  }
+
+  setLevelFilter(level: string) {
+    this.levelFilter.set(level);
+  }
+
+  toggleFilters() {
+    this.showFilters.set(!this.showFilters());
+  }
+
+  clearFilters() {
+    this.activeCategory.set('Todos');
+    this.durationFilter.set('Todas');
+    this.levelFilter.set('Todos');
+  }
+
+  hasActiveFilters(): boolean {
+    return this.activeCategory() !== 'Todos' ||
+           this.durationFilter() !== 'Todas' ||
+           this.levelFilter() !== 'Todos';
+  }
+
+  getActiveFiltersText(): string {
+    const filters: string[] = [];
+
+    if (this.durationFilter() !== 'Todas') {
+      filters.push(this.durationFilter());
+    }
+
+    if (this.levelFilter() !== 'Todos') {
+      filters.push(this.levelFilter());
+    }
+
+    if (this.activeCategory() !== 'Todos') {
+      filters.push(this.activeCategory());
+    }
+
+    return filters.join(', ');
   }
 
   selectWorkout(workoutId: number) {
@@ -547,7 +395,10 @@ export class Tab2Page {
   }
 
   startWorkout() {
-    // TODO: Implementar navegación al workout activo
-    console.log('Starting workout...');
+    const workout = this.getCurrentWorkout();
+    this.workoutService.startWorkout(workout);
+    console.log('Starting workout:', workout.title);
+    // Navegar al dashboard para ver el progreso
+    this.router.navigate(['/tabs/dashboard']);
   }
 }

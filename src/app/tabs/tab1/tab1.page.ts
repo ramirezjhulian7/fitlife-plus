@@ -1,7 +1,9 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, OnDestroy } from '@angular/core';
 import { IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonProgressBar, IonGrid, IonRow, IonCol } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
-import { play, flame, water, bulb, restaurant, barChart } from 'ionicons/icons';
+import { play, flame, water, bulb, restaurant, barChart, time } from 'ionicons/icons';
+import { WorkoutService, ActiveWorkout } from '../../services/workout.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-tab1',
@@ -19,30 +21,65 @@ import { play, flame, water, bulb, restaurant, barChart } from 'ionicons/icons';
           <!-- Columna izquierda -->
           <div class="left-column">
             <!-- Entrenamiento del día -->
-            <ion-card class="workout-card">
+            <ion-card class="workout-card" *ngIf="activeWorkout(); else defaultWorkout">
               <ion-card-header>
-                <ion-card-title class="workout-title">Entrenamiento de hoy</ion-card-title>
-                <span class="workout-time">30 min</span>
+                <ion-card-title class="workout-title">Entrenamiento activo</ion-card-title>
+                <span class="workout-time">{{ activeWorkout()!.workout.duration }}</span>
               </ion-card-header>
               <ion-card-content>
+                <div class="active-workout-info">
+                  <h3 class="active-workout-title">{{ activeWorkout()!.workout.title }}</h3>
+                  <p class="active-workout-meta">
+                    <ion-icon [icon]="timeIcon"></ion-icon>
+                    {{ timeRemaining() }} min restantes
+                  </p>
+                </div>
                 <ion-progress-bar
-                  value="0.65"
+                  [value]="workoutProgress()"
                   class="workout-progress"
                   color="success">
                 </ion-progress-bar>
-                <p class="workout-status">65% completado - HIIT Cardio</p>
+                <p class="workout-status">{{ (workoutProgress() * 100) | number:'1.0-0' }}% completado</p>
                 <ion-button
                   expand="block"
                   color="success"
                   class="workout-button"
                   tappable
-                  (click)="startWorkout()"
+                  (click)="continueWorkout()"
                   style="cursor: pointer;">
                   <ion-icon slot="start" [icon]="playIcon"></ion-icon>
-                  Comenzar entrenamiento
+                  Continuar entrenamiento
                 </ion-button>
               </ion-card-content>
             </ion-card>
+
+            <!-- Entrenamiento por defecto cuando no hay activo -->
+            <ng-template #defaultWorkout>
+              <ion-card class="workout-card">
+                <ion-card-header>
+                  <ion-card-title class="workout-title">Entrenamiento de hoy</ion-card-title>
+                  <span class="workout-time">30 min</span>
+                </ion-card-header>
+                <ion-card-content>
+                  <ion-progress-bar
+                    value="0.65"
+                    class="workout-progress"
+                    color="success">
+                  </ion-progress-bar>
+                  <p class="workout-status">65% completado - HIIT Cardio</p>
+                  <ion-button
+                    expand="block"
+                    color="success"
+                    class="workout-button"
+                    tappable
+                    (click)="startWorkout()"
+                    style="cursor: pointer;">
+                    <ion-icon slot="start" [icon]="playIcon"></ion-icon>
+                    Comenzar entrenamiento
+                  </ion-button>
+                </ion-card-content>
+              </ion-card>
+            </ng-template>
 
             <!-- Métricas -->
             <ion-grid class="metrics-grid">
@@ -250,6 +287,26 @@ import { play, flame, water, bulb, restaurant, barChart } from 'ionicons/icons';
 
     .workout-button {
       --border-radius: 8px;
+    }
+
+    .active-workout-info {
+      margin-bottom: 16px;
+    }
+
+    .active-workout-title {
+      color: #16a34a;
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+    }
+
+    .active-workout-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #6b7280;
+      font-size: 14px;
+      margin: 0 0 16px 0;
     }
 
     .metrics-grid {
@@ -484,9 +541,19 @@ import { play, flame, water, bulb, restaurant, barChart } from 'ionicons/icons';
   standalone: true,
   imports: [IonContent, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonButton, IonIcon, IonProgressBar, IonGrid, IonRow, IonCol, CommonModule]
 })
-export class Tab1Page implements OnInit {
+export class Tab1Page implements OnInit, OnDestroy {
   userName = signal('Usuario');
   currentDate = signal('');
+
+  // Entrenamiento activo
+  activeWorkout = signal<ActiveWorkout | null>(null);
+  workoutProgress = signal(0);
+  timeRemaining = signal(0);
+
+  // Servicios
+  private workoutService = inject(WorkoutService);
+  private router = inject(Router);
+  private progressInterval: any;
 
   // Iconos
   playIcon = play;
@@ -495,10 +562,38 @@ export class Tab1Page implements OnInit {
   bulbIcon = bulb;
   restaurantIcon = restaurant;
   barChartIcon = barChart;
+  timeIcon = time;
 
   ngOnInit() {
     this.loadUserData();
     this.setCurrentDate();
+    this.initializeActiveWorkout();
+  }
+
+  ngOnDestroy() {
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+    }
+  }
+
+  private initializeActiveWorkout() {
+    // Cargar entrenamiento activo inicial
+    this.updateActiveWorkout();
+
+    // Actualizar cada segundo para la progress bar
+    this.progressInterval = setInterval(() => {
+      this.updateActiveWorkout();
+    }, 1000);
+  }
+
+  private updateActiveWorkout() {
+    const active = this.workoutService.getActiveWorkout();
+    this.activeWorkout.set(active);
+
+    if (active) {
+      this.workoutProgress.set(this.workoutService.getWorkoutProgress());
+      this.timeRemaining.set(Math.ceil(this.workoutService.getTimeRemaining()));
+    }
   }
 
   private loadUserData() {
@@ -525,7 +620,17 @@ export class Tab1Page implements OnInit {
   }
 
   startWorkout() {
-    // TODO: Implementar navegación al workout
+    // TODO: Implementar navegación a la página de entrenamientos
     console.log('Starting workout...');
+  }
+
+  continueWorkout() {
+    const activeWorkout = this.activeWorkout();
+    if (activeWorkout) {
+      // Navegar a la página de entrenamientos con el workout activo seleccionado
+      this.router.navigate(['/tabs/workout'], {
+        state: { selectedWorkoutId: activeWorkout.workout.id }
+      });
+    }
   }
 }
