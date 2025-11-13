@@ -176,18 +176,18 @@
 
 .category-chip {
   flex-shrink: 0;
-  --background: rgba(255, 255, 255, 0.25);
-  --color: white;
-  border: 2px solid rgba(255, 255, 255, 0.4);
+  --background: rgba(255, 255, 255, 0.25) !important;
+  --color: white !important;
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
   font-weight: 600;
   --padding-start: 16px;
   --padding-end: 16px;
 }
 
 .category-chip.chip-outline {
-  --background: rgba(255, 255, 255, 0.1);
-  --color: white;
-  border: 2px solid rgba(255, 255, 255, 0.6);
+  --background: rgba(255, 255, 255, 0.1) !important;
+  --color: white !important;
+  border: 2px solid rgba(255, 255, 255, 0.6) !important;
 }
 
 .workouts-content {

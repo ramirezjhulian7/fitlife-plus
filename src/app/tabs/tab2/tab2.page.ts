@@ -105,7 +105,7 @@ import { Router } from '@angular/router';
             <div class="categories-scroll">
               <ion-chip
                 *ngFor="let category of categories()"
-                [color]="activeCategory() === category ? 'success' : 'medium'"
+                [color]="activeCategory() === category ? 'success' : 'light'"
                 [outline]="activeCategory() !== category"
                 (click)="setActiveCategory(category)"
                 class="category-chip"
