@@ -1,6 +1,11 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { DatabaseService, User } from './database.service';
+
+export interface User {
+  id: number;
+  email: string;
+  created_at: string;
+}
 
 export interface AuthState {
   isAuthenticated: boolean;
@@ -19,8 +24,9 @@ export class AuthService {
   });
 
   public authState$ = this.authState.asObservable();
+  private readonly USERS_KEY = 'fitlife-users';
 
-  constructor(private dbService: DatabaseService) {
+  constructor() {
     this.checkStoredAuth();
   }
 
@@ -68,15 +74,11 @@ export class AuthService {
     this.setLoading(true);
 
     try {
-      const result = await this.dbService.registerUser(email, password);
+      const result = await this.registerUserLocal(email, password);
       
-      if (result.success && result.userId) {
-        // Auto-login after successful registration
-        const loginResult = await this.dbService.loginUser(email, password);
-        if (loginResult.success && loginResult.user) {
-          this.setAuthenticatedUser(loginResult.user);
-          return { success: true, message: 'Cuenta creada exitosamente' };
-        }
+      if (result.success && result.user) {
+        this.setAuthenticatedUser(result.user);
+        return { success: true, message: 'Cuenta creada exitosamente' };
       }
       
       return result;
@@ -101,7 +103,7 @@ export class AuthService {
     this.setLoading(true);
 
     try {
-      const result = await this.dbService.loginUser(email, password);
+      const result = await this.loginUserLocal(email, password);
       
       if (result.success && result.user) {
         this.setAuthenticatedUser(result.user);
@@ -148,6 +150,103 @@ export class AuthService {
   private isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  }
+
+  private async registerUserLocal(email: string, password: string): Promise<{ success: boolean; message: string; user?: User }> {
+    try {
+      const users = this.getUsersFromStorage();
+
+      // Check if user already exists
+      const existingUser = users.find(u => u.email === email);
+      if (existingUser) {
+        return { success: false, message: 'El correo ya está registrado' };
+      }
+
+      // Hash password
+      const hashedPassword = await this.hashPassword(password);
+
+      // Create new user
+      const newUser: User & { password: string } = {
+        id: Date.now(), // Simple ID generation
+        email,
+        password: hashedPassword,
+        created_at: new Date().toISOString()
+      };
+
+      users.push(newUser);
+      this.saveUsersToStorage(users);
+
+      // Return user without password
+      const { password: _, ...userWithoutPassword } = newUser;
+      return {
+        success: true,
+        message: 'Usuario registrado exitosamente',
+        user: userWithoutPassword as User
+      };
+    } catch (error) {
+      console.error('Error registering user locally:', error);
+      return { success: false, message: 'Error en el registro' };
+    }
+  }
+
+  private async loginUserLocal(email: string, password: string): Promise<{ success: boolean; message: string; user?: User }> {
+    try {
+      const users = this.getUsersFromStorage();
+      const user = users.find(u => u.email === email);
+
+      if (!user) {
+        return { success: false, message: 'Usuario no encontrado' };
+      }
+
+      // Verify password
+      const isPasswordValid = await this.verifyPassword(password, user.password);
+      if (!isPasswordValid) {
+        return { success: false, message: 'Contraseña incorrecta' };
+      }
+
+      // Return user without password
+      const { password: _, ...userWithoutPassword } = user;
+      return {
+        success: true,
+        message: 'Login exitoso',
+        user: userWithoutPassword as User
+      };
+    } catch (error) {
+      console.error('Error during local login:', error);
+      return { success: false, message: 'Error en el login' };
+    }
+  }
+
+  private getUsersFromStorage(): (User & { password: string })[] {
+    try {
+      const usersJson = localStorage.getItem(this.USERS_KEY);
+      return usersJson ? JSON.parse(usersJson) : [];
+    } catch (error) {
+      console.error('Error reading users from localStorage:', error);
+      return [];
+    }
+  }
+
+  private saveUsersToStorage(users: (User & { password: string })[]): void {
+    try {
+      localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+    } catch (error) {
+      console.error('Error saving users to localStorage:', error);
+    }
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    // Simple hash for demo - in production use proper hashing library
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  private async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+    const hashedInput = await this.hashPassword(password);
+    return hashedInput === hashedPassword;
   }
 
   // Getters for easy access

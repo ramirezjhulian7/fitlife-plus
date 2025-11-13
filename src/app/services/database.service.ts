@@ -1,16 +1,14 @@
 import { Injectable } from '@angular/core';
-import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
-import { Capacitor } from '@capacitor/core';
 
 export interface User {
-  id?: number;
+  id: number;
   email: string;
   password: string;
-  created_at?: string;
+  created_at: string;
 }
 
 export interface UserProfile {
-  id?: number;
+  id: number;
   user_id: number;
   name: string;
   age: number;
@@ -21,196 +19,60 @@ export interface UserProfile {
   workout_reminder: boolean;
   meal_reminder: boolean;
   water_reminder: boolean;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class DatabaseService {
-  private sqlite: SQLiteConnection = new SQLiteConnection(CapacitorSQLite);
-  private db: SQLiteDBConnection | null = null;
-  private isInitialized = false;
-  private initPromise: Promise<void> | null = null;
+  private readonly USERS_KEY = 'fitlife_users';
+  private readonly PROFILES_KEY = 'fitlife_profiles';
+  private nextUserId = 1;
+  private nextProfileId = 1;
 
   constructor() {
-    // Don't initialize here, do it lazily
+    this.initializeIds();
   }
 
-  private async ensureInitialized(): Promise<void> {
-    if (this.isInitialized) return;
-    if (this.initPromise) return this.initPromise;
-    
-    this.initPromise = this.initializeDatabase();
-    return this.initPromise;
-  }
+  private initializeIds(): void {
+    // Initialize next IDs from localStorage
+    const users = this.getUsersFromStorage();
+    if (users.length > 0) {
+      this.nextUserId = Math.max(...users.map((u: User) => u.id)) + 1;
+    }
 
-  private async initializeDatabase(): Promise<void> {
-    if (this.isInitialized) return;
-
-    // Set a timeout for the entire initialization
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Database initialization timeout')), 10000);
-    });
-
-    const initPromise = this.doInitializeDatabase();
-    
-    try {
-      await Promise.race([initPromise, timeoutPromise]);
-    } catch (error) {
-      console.error('Database initialization failed or timed out:', error);
-      // Reset the promise so it can be retried
-      this.initPromise = null;
-      throw error;
+    const profiles = this.getAllProfiles();
+    if (profiles.length > 0) {
+      this.nextProfileId = Math.max(...profiles.map((p: UserProfile) => p.id)) + 1;
     }
   }
 
-  private async doInitializeDatabase(): Promise<void> {
-    console.log('Starting database initialization...');
-    
-    // For web platform, ensure jeep-sqlite is loaded
-    if (Capacitor.getPlatform() === 'web') {
-      await this.ensureJeepSqliteLoaded();
-    }
-
-    console.log('Creating database connection...');
-    // Create database connection
-    this.db = await this.sqlite.createConnection(
-      'fitlife_db',
-      false,
-      'no-encryption',
-      1,
-      false
-    );
-
-    console.log('Opening database...');
-    // Open database
-    await this.db.open();
-
-    console.log('Creating tables...');
-    // Create users table
-    await this.createTables();
-    
-    this.isInitialized = true;
-    console.log('Database initialized successfully');
+  private getUsersFromStorage(): User[] {
+    const usersJson = localStorage.getItem(this.USERS_KEY);
+    return usersJson ? JSON.parse(usersJson) : [];
   }
 
-  private async ensureJeepSqliteLoaded(): Promise<void> {
-    console.log('Ensuring jeep-sqlite is loaded...');
-    
-    // Set a timeout for the entire process
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('jeep-sqlite loading timeout')), 5000);
-    });
-
-    const loadPromise = this.doLoadJeepSqlite();
-    
-    try {
-      await Promise.race([loadPromise, timeoutPromise]);
-    } catch (error) {
-      console.warn('jeep-sqlite loading failed or timed out:', error);
-      // Continue anyway
-    }
+  private saveAllUsers(users: User[]): void {
+    localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
   }
 
-  private async doLoadJeepSqlite(): Promise<void> {
-    // Check if jeep-sqlite element exists
-    let jeepElement = document.querySelector('jeep-sqlite');
-    if (!jeepElement) {
-      console.log('Adding jeep-sqlite element to DOM');
-      jeepElement = document.createElement('jeep-sqlite');
-      document.body.appendChild(jeepElement);
-    }
-
-    // Try to initialize web store directly - sometimes it works without explicit loader
-    try {
-      console.log('Initializing web store...');
-      await CapacitorSQLite.initWebStore();
-      console.log('Web store initialized');
-      return;
-    } catch (error) {
-      console.warn('Failed to init web store without loader:', error);
-    }
-
-    // If that failed, try importing the loader
-    if (!customElements.get('jeep-sqlite')) {
-      console.log('jeep-sqlite not defined, importing loader...');
-      try {
-        await import('jeep-sqlite/loader');
-        console.log('jeep-sqlite loader imported');
-        // Wait a bit for it to register
-        await new Promise(resolve => setTimeout(resolve, 200));
-        console.log('Waited for jeep-sqlite registration');
-      } catch (importError) {
-        console.warn('Failed to load jeep-sqlite loader:', importError);
-        // Continue anyway, might work without it
-      }
-    } else {
-      console.log('jeep-sqlite already defined');
-    }
-
-    // Try initializing web store again
-    try {
-      console.log('Initializing web store again...');
-      await CapacitorSQLite.initWebStore();
-      console.log('Web store initialized');
-    } catch (error) {
-      console.warn('Failed to init web store:', error);
-      // Continue anyway - some operations might work
-    }
+  private getAllProfiles(): UserProfile[] {
+    const profilesJson = localStorage.getItem(this.PROFILES_KEY);
+    return profilesJson ? JSON.parse(profilesJson) : [];
   }
 
-  private async createTables(): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const createUsersTable = `
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-    `;
-
-    const createUserProfilesTable = `
-      CREATE TABLE IF NOT EXISTS user_profiles (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        name TEXT NOT NULL,
-        age INTEGER NOT NULL,
-        height REAL NOT NULL,
-        weight REAL NOT NULL,
-        goal TEXT NOT NULL,
-        workout_frequency INTEGER DEFAULT 3,
-        workout_reminder BOOLEAN DEFAULT 1,
-        meal_reminder BOOLEAN DEFAULT 1,
-        water_reminder BOOLEAN DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-        UNIQUE(user_id)
-      );
-    `;
-
-    try {
-      await this.db.execute(createUsersTable);
-      console.log('Users table created successfully');
-      
-      await this.db.execute(createUserProfilesTable);
-      console.log('User profiles table created successfully');
-    } catch (error) {
-      console.error('Error creating tables:', error);
-      throw error;
-    }
+  private saveAllProfiles(profiles: UserProfile[]): void {
+    localStorage.setItem(this.PROFILES_KEY, JSON.stringify(profiles));
   }
 
   async registerUser(email: string, password: string): Promise<{ success: boolean; message: string; userId?: number }> {
-    await this.ensureInitialized();
-
     try {
+      const users = this.getUsersFromStorage();
+
       // Check if user already exists
-      const existingUser = await this.getUserByEmail(email);
+      const existingUser = users.find((u: User) => u.email === email);
       if (existingUser) {
         return { success: false, message: 'El correo ya está registrado' };
       }
@@ -218,21 +80,22 @@ export class DatabaseService {
       // Hash password (in production, use proper hashing like bcrypt)
       const hashedPassword = await this.hashPassword(password);
 
-      // Insert new user
-      const result = await this.db!.run(
-        'INSERT INTO users (email, password) VALUES (?, ?)',
-        [email, hashedPassword]
-      );
+      // Create new user
+      const newUser: User = {
+        id: this.nextUserId++,
+        email,
+        password: hashedPassword,
+        created_at: new Date().toISOString()
+      };
 
-      if (result.changes && result.changes.lastId) {
-        return { 
-          success: true, 
-          message: 'Usuario registrado exitosamente',
-          userId: result.changes.lastId 
-        };
-      } else {
-        return { success: false, message: 'Error al registrar usuario' };
-      }
+      users.push(newUser);
+      this.saveAllUsers(users);
+
+      return {
+        success: true,
+        message: 'Usuario registrado exitosamente',
+        userId: newUser.id
+      };
     } catch (error) {
       console.error('Error registering user:', error);
       return { success: false, message: 'Error en el registro' };
@@ -240,10 +103,10 @@ export class DatabaseService {
   }
 
   async loginUser(email: string, password: string): Promise<{ success: boolean; message: string; user?: User }> {
-    await this.ensureInitialized();
-
     try {
-      const user = await this.getUserByEmail(email);
+      const users = this.getUsersFromStorage();
+      const user = users.find((u: User) => u.email === email);
+
       if (!user) {
         return { success: false, message: 'Usuario no encontrado' };
       }
@@ -256,7 +119,7 @@ export class DatabaseService {
 
       // Remove password from returned user object
       const { password: _, ...userWithoutPassword } = user;
-      
+
       return {
         success: true,
         message: 'Login exitoso',
@@ -265,23 +128,6 @@ export class DatabaseService {
     } catch (error) {
       console.error('Error during login:', error);
       return { success: false, message: 'Error en el login' };
-    }
-  }
-
-  private async getUserByEmail(email: string): Promise<User | null> {
-    if (!this.db) return null;
-
-    try {
-      const result = await this.db.query('SELECT * FROM users WHERE email = ?', [email]);
-      
-      if (result.values && result.values.length > 0) {
-        return result.values[0] as User;
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error getting user by email:', error);
-      return null;
     }
   }
 
@@ -299,57 +145,34 @@ export class DatabaseService {
     return hashedInput === hashedPassword;
   }
 
-  async getAllUsers(): Promise<User[]> {
-    await this.ensureInitialized();
-
-    try {
-      const result = await this.db!.query('SELECT id, email, created_at FROM users');
-      return result.values || [];
-    } catch (error) {
-      console.error('Error getting all users:', error);
-      return [];
-    }
-  }
-
-  async closeDatabase(): Promise<void> {
-    if (this.db) {
-      await this.db.close();
-      this.db = null;
-      this.isInitialized = false;
-    }
-  }
-
   // User Profile methods
   async createUserProfile(profile: Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>): Promise<{ success: boolean; message: string; profileId?: number }> {
-    await this.ensureInitialized();
-
     try {
-      const result = await this.db!.run(
-        `INSERT INTO user_profiles (user_id, name, age, height, weight, goal, workout_frequency, workout_reminder, meal_reminder, water_reminder)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          profile.user_id,
-          profile.name,
-          profile.age,
-          profile.height,
-          profile.weight,
-          profile.goal,
-          profile.workout_frequency || 3,
-          profile.workout_reminder ? 1 : 0,
-          profile.meal_reminder ? 1 : 0,
-          profile.water_reminder ? 1 : 0
-        ]
-      );
+      const profiles = this.getAllProfiles();
 
-      if (result.changes && result.changes.lastId) {
-        return {
-          success: true,
-          message: 'Perfil creado exitosamente',
-          profileId: result.changes.lastId
-        };
-      } else {
-        return { success: false, message: 'Error al crear perfil' };
+      // Check if profile already exists for this user
+      const existingProfile = profiles.find(p => p.user_id === profile.user_id);
+      if (existingProfile) {
+        return { success: false, message: 'El perfil ya existe para este usuario' };
       }
+
+      const now = new Date().toISOString();
+      const newProfile: UserProfile = {
+        id: this.nextProfileId++,
+        ...profile,
+        workout_frequency: profile.workout_frequency || 3,
+        created_at: now,
+        updated_at: now
+      };
+
+      profiles.push(newProfile);
+      this.saveAllProfiles(profiles);
+
+      return {
+        success: true,
+        message: 'Perfil creado exitosamente',
+        profileId: newProfile.id
+      };
     } catch (error) {
       console.error('Error creating user profile:', error);
       return { success: false, message: 'Error al crear perfil' };
@@ -357,25 +180,11 @@ export class DatabaseService {
   }
 
   async getUserProfile(userId: number): Promise<UserProfile | null> {
-    await this.ensureInitialized();
-
     try {
-      const result = await this.db!.query(
-        'SELECT * FROM user_profiles WHERE user_id = ?',
-        [userId]
-      );
+      const profiles = this.getAllProfiles();
+      const profile = profiles.find(p => p.user_id === userId);
 
-      if (result.values && result.values.length > 0) {
-        const profile = result.values[0] as any;
-        return {
-          ...profile,
-          workout_reminder: Boolean(profile.workout_reminder),
-          meal_reminder: Boolean(profile.meal_reminder),
-          water_reminder: Boolean(profile.water_reminder)
-        };
-      }
-
-      return null;
+      return profile || null;
     } catch (error) {
       console.error('Error getting user profile:', error);
       return null;
@@ -383,36 +192,24 @@ export class DatabaseService {
   }
 
   async updateUserProfile(userId: number, updates: Partial<Omit<UserProfile, 'id' | 'user_id' | 'created_at'>>): Promise<{ success: boolean; message: string }> {
-    await this.ensureInitialized();
-
     try {
-      const updateFields: string[] = [];
-      const values: any[] = [];
+      const profiles = this.getAllProfiles();
+      const profileIndex = profiles.findIndex(p => p.user_id === userId);
 
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value !== undefined) {
-          updateFields.push(`${key} = ?`);
-          values.push(typeof value === 'boolean' ? (value ? 1 : 0) : value);
-        }
-      });
-
-      if (updateFields.length === 0) {
-        return { success: false, message: 'No hay campos para actualizar' };
+      if (profileIndex === -1) {
+        return { success: false, message: 'Perfil no encontrado' };
       }
 
-      // Always update the updated_at timestamp
-      updateFields.push('updated_at = CURRENT_TIMESTAMP');
-      values.push(userId);
+      // Update the profile
+      profiles[profileIndex] = {
+        ...profiles[profileIndex],
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
 
-      const query = `UPDATE user_profiles SET ${updateFields.join(', ')} WHERE user_id = ?`;
+      this.saveAllProfiles(profiles);
 
-      const result = await this.db!.run(query, values);
-
-      if (result.changes && result.changes.changes && result.changes.changes > 0) {
-        return { success: true, message: 'Perfil actualizado exitosamente' };
-      } else {
-        return { success: false, message: 'Perfil no encontrado o no se pudo actualizar' };
-      }
+      return { success: true, message: 'Perfil actualizado exitosamente' };
     } catch (error) {
       console.error('Error updating user profile:', error);
       return { success: false, message: 'Error al actualizar perfil' };
@@ -420,10 +217,127 @@ export class DatabaseService {
   }
 
   async updateProfilePreferences(userId: number, preferences: { workout_reminder?: boolean; meal_reminder?: boolean; water_reminder?: boolean }): Promise<{ success: boolean; message: string }> {
-    return this.updateUserProfile(userId, preferences);
+    try {
+      // First check if profile exists
+      const existingProfile = await this.getUserProfile(userId);
+
+      if (!existingProfile) {
+        // Create profile if it doesn't exist
+        const userDataString = localStorage.getItem('userData');
+        if (userDataString) {
+          const userData = JSON.parse(userDataString);
+
+          const profileData = {
+            user_id: userId,
+            name: userData.name || 'Usuario',
+            age: userData.age || 28,
+            height: userData.height || 170,
+            weight: userData.weight || this.getCurrentWeight(),
+            goal: userData.goal || 'lose_weight',
+            workout_frequency: userData.workoutFrequency || 3,
+            workout_reminder: preferences.workout_reminder ?? true,
+            meal_reminder: preferences.meal_reminder ?? true,
+            water_reminder: preferences.water_reminder ?? false
+          };
+
+          const createResult = await this.createUserProfile(profileData);
+          if (createResult.success) {
+            return { success: true, message: 'Perfil creado y preferencias actualizadas exitosamente' };
+          } else {
+            return { success: false, message: 'Error al crear perfil' };
+          }
+        } else {
+          return { success: false, message: 'No se encontraron datos de usuario para crear perfil' };
+        }
+      } else {
+        // Update existing profile
+        return this.updateUserProfile(userId, preferences);
+      }
+    } catch (error) {
+      console.error('Error updating profile preferences:', error);
+      return { success: false, message: 'Error al actualizar preferencias' };
+    }
+  }
+
+  private getCurrentWeight(): number {
+    // Get current weight from the last entry in weightHistory
+    const weightHistoryString = localStorage.getItem('weightHistory');
+    if (weightHistoryString) {
+      try {
+        const weightHistory = JSON.parse(weightHistoryString);
+        if (weightHistory && weightHistory.length > 0) {
+          // Return the most recent weight entry
+          const sortedHistory = weightHistory.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          return sortedHistory[0].weight;
+        }
+      } catch (error) {
+        console.error('Error parsing weight history:', error);
+      }
+    }
+
+    // Fallback to userData weight or default
+    const userDataString = localStorage.getItem('userData');
+    if (userDataString) {
+      try {
+        const userData = JSON.parse(userDataString);
+        return userData.weight || 73.2;
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+
+    return 73.2; // Default weight
   }
 
   async updateWorkoutPreferences(userId: number, workoutFrequency: number): Promise<{ success: boolean; message: string }> {
-    return this.updateUserProfile(userId, { workout_frequency: workoutFrequency });
+    try {
+      // First check if profile exists
+      const existingProfile = await this.getUserProfile(userId);
+
+      if (!existingProfile) {
+        // Create profile if it doesn't exist
+        const userDataString = localStorage.getItem('userData');
+        if (userDataString) {
+          const userData = JSON.parse(userDataString);
+
+          const profileData = {
+            user_id: userId,
+            name: userData.name || 'Usuario',
+            age: userData.age || 28,
+            height: userData.height || 170,
+            weight: userData.weight || this.getCurrentWeight(),
+            goal: userData.goal || 'lose_weight',
+            workout_frequency: workoutFrequency,
+            workout_reminder: true,
+            meal_reminder: true,
+            water_reminder: false
+          };
+
+          const createResult = await this.createUserProfile(profileData);
+          if (createResult.success) {
+            return { success: true, message: 'Perfil creado y frecuencia de entrenamiento actualizada exitosamente' };
+          } else {
+            return { success: false, message: 'Error al crear perfil' };
+          }
+        } else {
+          return { success: false, message: 'No se encontraron datos de usuario para crear perfil' };
+        }
+      } else {
+        // Update existing profile
+        return this.updateUserProfile(userId, { workout_frequency: workoutFrequency });
+      }
+    } catch (error) {
+      console.error('Error updating workout preferences:', error);
+      return { success: false, message: 'Error al actualizar frecuencia de entrenamiento' };
+    }
+  }
+
+  // Legacy methods for compatibility
+  async getAllUsers(): Promise<User[]> {
+    return Promise.resolve(this.getUsersFromStorage());
+  }
+
+  async closeDatabase(): Promise<void> {
+    // No-op for localStorage implementation
   }
 }

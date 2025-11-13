@@ -9,6 +9,7 @@ import { Router } from '@angular/router';
 import { EditProfileModalComponent } from '../../components/edit-profile-modal/edit-profile-modal.component';
 import { WorkoutPreferencesModalComponent } from '../../components/workout-preferences-modal/workout-preferences-modal.component';
 import { NutritionPreferencesModalComponent } from '../../components/nutrition-preferences-modal/nutrition-preferences-modal.component';
+import { NotificationService } from '../../services/notification';
 
 @Component({
   selector: 'app-tab5',
@@ -32,11 +33,14 @@ export class Tab5Page implements OnInit {
     private databaseService: DatabaseService,
     private router: Router,
     private modalController: ModalController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private notificationService: NotificationService
   ) {}
 
   async ngOnInit() {
     await this.loadUserProfile();
+    // Initialize notifications after loading profile
+    await this.initializeNotifications();
   }
 
   async loadUserProfile() {
@@ -48,6 +52,13 @@ export class Tab5Page implements OnInit {
       if (userDataString) {
         const userData = JSON.parse(userDataString);
         this.userName = userData.name || 'Usuario';
+
+        // Load reminder preferences from localStorage first
+        if (userData.reminders) {
+          this.workoutReminder = userData.reminders.workoutReminder ?? true;
+          this.mealReminder = userData.reminders.mealReminder ?? true;
+          this.waterReminder = userData.reminders.waterReminder ?? false;
+        }
 
         // Create a profile-like object from userData
         this.userProfile = {
@@ -61,11 +72,13 @@ export class Tab5Page implements OnInit {
           workout_frequency: userData.workoutFrequency || 3, // Load from localStorage
           workout_reminder: this.workoutReminder,
           meal_reminder: this.mealReminder,
-          water_reminder: this.waterReminder
+          water_reminder: this.waterReminder,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         };
       }
 
-      // Load reminder preferences from database if user is authenticated
+      // Load reminder preferences from database if user is authenticated (override localStorage if available)
       const currentUser = this.authService.currentUser;
       if (currentUser && currentUser.id) {
         const dbProfile = await this.databaseService.getUserProfile(currentUser.id);
@@ -76,7 +89,22 @@ export class Tab5Page implements OnInit {
           // Update userProfile with correct user_id for preferences
           if (this.userProfile) {
             this.userProfile.user_id = currentUser.id;
+            this.userProfile.workout_reminder = this.workoutReminder;
+            this.userProfile.meal_reminder = this.mealReminder;
+            this.userProfile.water_reminder = this.waterReminder;
           }
+
+          // Also update localStorage to keep it in sync
+          const updatedUserData = JSON.parse(localStorage.getItem('userData') || '{}');
+          updatedUserData.reminders = {
+            workoutReminder: this.workoutReminder,
+            mealReminder: this.mealReminder,
+            waterReminder: this.waterReminder
+          };
+          localStorage.setItem('userData', JSON.stringify(updatedUserData));
+        } else {
+          // If no profile exists in database, create one from localStorage data
+          await this.createProfileIfNeeded(currentUser.id);
         }
       }
     } catch (error) {
@@ -86,33 +114,55 @@ export class Tab5Page implements OnInit {
     }
   }
 
-  private async createProfileFromOnboarding(userId: number) {
-    // Get onboarding data from localStorage as fallback
-    const onboardingData = localStorage.getItem('onboardingData');
-    if (onboardingData) {
-      try {
-        const data = JSON.parse(onboardingData);
-        
-        const profileData = {
-          user_id: userId,
-          name: data.name || 'Usuario',
-          age: data.age || 28,
-          height: data.height || 170,
-          weight: data.weight || 73.2,
-          goal: this.mapGoalToDatabase(data.goal),
-          workout_frequency: data.workoutFrequency || 3, // Include workout frequency
-          workout_reminder: true,
-          meal_reminder: true,
-          water_reminder: false
-        };
-
-        const result = await this.databaseService.createUserProfile(profileData);
-        if (result.success) {
-          await this.loadUserProfile(); // Reload to get the created profile
-        }
-      } catch (error) {
-        console.error('Error creating profile from onboarding data:', error);
+  async initializeNotifications() {
+    try {
+      // Request notification permissions on app start
+      const hasPermission = await this.notificationService.checkPermissions();
+      if (!hasPermission) {
+        await this.notificationService.requestPermissions();
       }
+
+      // Update notifications based on current preferences
+      await this.notificationService.updateReminders();
+    } catch (error) {
+      console.error('Error initializing notifications:', error);
+    }
+  }
+
+  private async createProfileIfNeeded(userId: number) {
+    try {
+      // Get user data from localStorage
+      const userDataString = localStorage.getItem('userData');
+      if (!userDataString) return;
+
+      const userData = JSON.parse(userDataString);
+
+      // Create profile with current reminder preferences
+      const profileData = {
+        user_id: userId,
+        name: userData.name || 'Usuario',
+        age: userData.age || 28,
+        height: userData.height || 170,
+        weight: userData.weight || this.getCurrentWeight(),
+        goal: this.mapGoalToDatabase(userData.goal || 'lose_weight'),
+        workout_frequency: userData.workoutFrequency || 3,
+        workout_reminder: this.workoutReminder,
+        meal_reminder: this.mealReminder,
+        water_reminder: this.waterReminder
+      };
+
+      const result = await this.databaseService.createUserProfile(profileData);
+      if (result.success) {
+        console.log('Profile created successfully for user:', userId);
+        // Update userProfile with correct user_id
+        if (this.userProfile) {
+          this.userProfile.user_id = userId;
+        }
+      } else {
+        console.error('Error creating profile:', result.message);
+      }
+    } catch (error) {
+      console.error('Error creating profile if needed:', error);
     }
   }
 
@@ -202,9 +252,60 @@ export class Tab5Page implements OnInit {
 
       if (!result.success) {
         console.error('Error updating preferences:', result.message);
+        return;
       }
+
+      // Also save reminder preferences to localStorage
+      const userDataString = localStorage.getItem('userData');
+      if (userDataString) {
+        try {
+          const userData = JSON.parse(userDataString);
+          userData.reminders = {
+            workoutReminder: this.workoutReminder,
+            mealReminder: this.mealReminder,
+            waterReminder: this.waterReminder
+          };
+          localStorage.setItem('userData', JSON.stringify(userData));
+        } catch (error) {
+          console.error('Error updating localStorage with reminders:', error);
+        }
+      }
+
+      // Request notification permissions if not already granted
+      const hasPermission = await this.notificationService.checkPermissions();
+      if (!hasPermission) {
+        const granted = await this.notificationService.requestPermissions();
+        if (!granted) {
+          const toast = await this.toastController.create({
+            message: 'Permisos de notificación denegados. Las notificaciones no funcionarán.',
+            duration: 3000,
+            position: 'bottom',
+            color: 'warning'
+          });
+          await toast.present();
+          return;
+        }
+      }
+
+      // Update notifications based on new preferences
+      await this.notificationService.updateReminders();
+
+      const toast = await this.toastController.create({
+        message: 'Preferencias de recordatorios actualizadas',
+        duration: 2000,
+        position: 'bottom',
+        color: 'success'
+      });
+      await toast.present();
     } catch (error) {
       console.error('Error updating reminder preferences:', error);
+      const toast = await this.toastController.create({
+        message: 'Error al actualizar recordatorios',
+        duration: 2000,
+        position: 'bottom',
+        color: 'danger'
+      });
+      await toast.present();
     }
   }
 
