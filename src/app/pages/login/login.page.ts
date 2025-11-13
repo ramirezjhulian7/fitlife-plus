@@ -106,9 +106,13 @@ export class LoginPage implements OnInit {
       this.showToastMessage(result.message);
       
       if (result.success) {
-        // Navigate to dashboard after successful login
+        // Navigate to onboarding or dashboard after successful login
         setTimeout(() => {
-          this.router.navigate(['/tabs/tab1']);
+          if (!localStorage.getItem('onboardingCompleted')) {
+            this.router.navigate(['/onboarding']);
+          } else {
+            this.router.navigate(['/tabs/tab1']);
+          }
         }, 1500);
       }
     } catch (error) {
