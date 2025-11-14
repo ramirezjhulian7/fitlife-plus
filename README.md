@@ -262,12 +262,6 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) par
 - **Comunidad Ionic**: Por el excelente framework de desarrollo móvil
 - **Equipo de Desarrollo**: Por la dedicación y esfuerzo en crear esta solución integral
 
-## 📞 Contacto
-
-**Politécnico Gran Colombiano**
-- Email: info@politecnico.edu.co
-- Sitio Web: [www.politecnico.edu.co](https://www.politecnico.edu.co)
-
 ---
 
 *FitLife Plus - Tu compañero de fitness inteligente* 💪📱
