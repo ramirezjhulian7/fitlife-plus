@@ -91,26 +91,31 @@
         <ion-item>
           <ion-icon name="notifications" color="primary" slot="start"></ion-icon>
           <ion-label>Recordatorio de entrenamiento</ion-label>
-          <ion-button fill="clear" size="small" (click)="testWorkoutNotification()" slot="end" style="margin-right: 8px;">
-            <ion-icon src="assets/custom-icons/notification-test.svg" color="primary"></ion-icon>
-          </ion-button>
-          <ion-toggle [(ngModel)]="workoutReminder" (ionChange)="onReminderChange()" slot="end"></ion-toggle>
+          <ion-toggle [checked]="workoutReminder" (ionChange)="workoutReminder = $any($event).detail.checked; onReminderChange()" slot="end"></ion-toggle>
         </ion-item>
         <ion-item>
           <ion-icon name="notifications" color="primary" slot="start"></ion-icon>
           <ion-label>Recordatorio de comidas</ion-label>
-          <ion-button fill="clear" size="small" (click)="testMealNotification()" slot="end" style="margin-right: 8px;">
-            <ion-icon src="assets/custom-icons/notification-test.svg" color="primary"></ion-icon>
-          </ion-button>
-          <ion-toggle [(ngModel)]="mealReminder" (ionChange)="onReminderChange()" slot="end"></ion-toggle>
+          <ion-toggle [checked]="mealReminder" (ionChange)="mealReminder = $any($event).detail.checked; onReminderChange()" slot="end"></ion-toggle>
         </ion-item>
         <ion-item>
           <ion-icon name="notifications" color="primary" slot="start"></ion-icon>
           <ion-label>Recordatorio de hidratación</ion-label>
-          <ion-button fill="clear" size="small" (click)="testWaterNotification()" slot="end" style="margin-right: 8px;">
-            <ion-icon src="assets/custom-icons/notification-test.svg" color="primary"></ion-icon>
+          <ion-toggle [checked]="waterReminder" (ionChange)="waterReminder = $any($event).detail.checked; onReminderChange()" slot="end"></ion-toggle>
+        </ion-item>
+      </ion-card>
+    </div>
+
+    <!-- Test Notifications Section -->
+    <div class="section">
+      <h3 class="section-title">Pruebas de Notificaciones</h3>
+      <ion-card>
+        <ion-item>
+          <ion-label>Notificación retardada (5 segundos)</ion-label>
+          <ion-button fill="outline" size="small" (click)="testDelayedNotification()" slot="end">
+            <ion-icon name="time" slot="start"></ion-icon>
+            Probar
           </ion-button>
-          <ion-toggle [(ngModel)]="waterReminder" (ionChange)="onReminderChange()" slot="end"></ion-toggle>
         </ion-item>
       </ion-card>
     </div>

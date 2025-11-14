@@ -152,39 +152,9 @@
   }
 }
 
-// Responsive adjustments
-@media (max-width: 576px) {
-  .profile-header {
-    padding: 20px;
-
-    .profile-title {
-      font-size: 24px;
-    }
-
-    .user-card {
-      padding: 12px;
-      gap: 12px;
-
-      .avatar-container .user-avatar {
-        width: 56px;
-        height: 56px;
-
-        ion-icon {
-          font-size: 28px;
-        }
-      }
-
-      .user-info .user-name {
-        font-size: 16px;
-      }
-    }
-  }
-
-  .profile-content {
-    padding: 0 20px 100px 20px;
-
-    .section .section-title {
-      font-size: 16px;
-    }
-  }
+// Simple toggle styling - let Ionic handle most styling
+ion-toggle {
+  --background-checked: #16a34a;
+  --handle-background-checked: #ffffff;
+  --border-radius: 16px;
 }

@@ -68,6 +68,59 @@ export class NotificationService {
     }
   }
 
+  async scheduleMealReminders(enabled: boolean): Promise<void> {
+    try {
+      // Cancel existing meal notifications
+      await LocalNotifications.cancel({ notifications: [{ id: 200 }, { id: 201 }, { id: 202 }] });
+
+      if (!enabled) return;
+
+      // Schedule meal reminders at breakfast, lunch, and dinner times
+      const notifications = [
+        {
+          id: 200,
+          title: 'Breakfast Time',
+          body: 'Time for a healthy breakfast!',
+          schedule: {
+            at: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 8, 0, 0),
+            repeats: true,
+            every: 'day' as const
+          },
+          actionTypeId: 'meal',
+          extra: { type: 'meal', mealType: 'breakfast' }
+        },
+        {
+          id: 201,
+          title: 'Lunch Time',
+          body: 'Time for a nutritious lunch!',
+          schedule: {
+            at: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 13, 0, 0),
+            repeats: true,
+            every: 'day' as const
+          },
+          actionTypeId: 'meal',
+          extra: { type: 'meal', mealType: 'lunch' }
+        },
+        {
+          id: 202,
+          title: 'Dinner Time',
+          body: 'Time for a balanced dinner!',
+          schedule: {
+            at: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 19, 0, 0),
+            repeats: true,
+            every: 'day' as const
+          },
+          actionTypeId: 'meal',
+          extra: { type: 'meal', mealType: 'dinner' }
+        }
+      ];
+
+      await LocalNotifications.schedule({ notifications });
+    } catch (error) {
+      console.error('Error scheduling meal reminders:', error);
+    }
+  }
+
   async scheduleWaterReminders(enabled: boolean): Promise<void> {
     try {
       // Cancel existing water notifications
@@ -104,25 +157,87 @@ export class NotificationService {
 
   async updateReminders(): Promise<void> {
     try {
-      // Get reminder preferences from localStorage
-      const userDataString = localStorage.getItem('userData');
+      // Get reminder preferences from localStorage (user-specific)
+      const userId = this.authService.currentUser?.id;
+      const userDataKey = userId ? `userData_${userId}` : 'userData';
+      const userDataString = localStorage.getItem(userDataKey);
+      
       if (userDataString) {
         const userData = JSON.parse(userDataString);
         const reminders = userData.reminders || {};
 
         await this.scheduleWorkoutReminders(reminders.workoutReminder ?? true);
+        await this.scheduleMealReminders(reminders.mealReminder ?? true);
         await this.scheduleWaterReminders(reminders.waterReminder ?? false);
+      } else {
+        // Default reminders if no user data
+        await this.scheduleWorkoutReminders(true);
+        await this.scheduleMealReminders(true);
+        await this.scheduleWaterReminders(false);
       }
     } catch (error) {
       console.error('Error updating reminders:', error);
     }
   }
 
-  async cancelAllReminders(): Promise<void> {
+  async sendTestNotification(type: 'workout' | 'meal' | 'water'): Promise<void> {
     try {
-      await LocalNotifications.cancel({ notifications: [] }); // Cancel all notifications
+      let title: string;
+      let body: string;
+
+      switch (type) {
+        case 'workout':
+          title = '¡Prueba de Notificación!';
+          body = 'Esta es una notificación de prueba para recordatorios de entrenamiento.';
+          break;
+        case 'meal':
+          title = '¡Prueba de Notificación!';
+          body = 'Esta es una notificación de prueba para recordatorios de comidas.';
+          break;
+        case 'water':
+          title = '¡Prueba de Notificación!';
+          body = 'Esta es una notificación de prueba para recordatorios de hidratación.';
+          break;
+      }
+
+      // Use smaller IDs to avoid issues on Android
+      const testIds: { [key: string]: number } = { workout: 9001, meal: 9002, water: 9003 };
+      
+      await LocalNotifications.schedule({
+        notifications: [{
+          id: testIds[type],
+          title,
+          body,
+          schedule: { at: new Date() }, // Show immediately
+          actionTypeId: type,
+          extra: { type: 'test' }
+        }]
+      });
     } catch (error) {
-      console.error('Error canceling reminders:', error);
+      console.error(`Error sending test ${type} notification:`, error);
+      throw error;
+    }
+  }
+
+  async sendDelayedTestNotification(seconds: number = 5): Promise<void> {
+    try {
+      const notificationTime = new Date(Date.now() + (seconds * 1000)); // Add seconds to current time
+      // Use a smaller ID to avoid issues on Android
+      const testNotificationId = 9999;
+
+      await LocalNotifications.schedule({
+        notifications: [{
+          id: testNotificationId,
+          title: '¡Notificación Retardada!',
+          body: `Esta notificación se programó para aparecer en ${seconds} segundos.`,
+          schedule: { at: notificationTime },
+          actionTypeId: 'test',
+          extra: { type: 'delayed_test' }
+        }]
+      });
+    } catch (error) {
+      console.error('Error sending delayed test notification:', error);
+      throw error;
     }
   }
 }
