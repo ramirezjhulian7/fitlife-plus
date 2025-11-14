@@ -236,6 +236,41 @@ npx cap sync
 npx cap build android
 ```
 
+### 🚀 CI/CD con GitHub Actions
+
+Este proyecto incluye un pipeline automatizado de GitHub Actions que compila automáticamente los APKs de Android en cada push a la rama principal.
+
+#### ¿Cómo funciona?
+1. **Compilación Automática**: Cada push a `master` o `main` activa el workflow
+2. **Construcción del APK**: Se genera tanto la versión Debug como Release
+3. **Artifacts**: Los APKs se suben como artifacts descargables
+4. **Releases**: Se crea automáticamente una release de GitHub con los APKs
+
+#### Descargar APK
+1. Ve a la pestaña **"Actions"** en el repositorio de GitHub
+2. Selecciona el workflow **"Build Android APK"**
+3. En la ejecución más reciente, ve a **"Artifacts"**
+4. Descarga `fitlife-plus-debug.apk` o `fitlife-plus-release.apk`
+
+#### Releases Automáticas
+Cada push a la rama principal también crea una nueva release en la pestaña **"Releases"** con los APKs adjuntos.
+
+#### Configuración de Firma (Opcional)
+Para generar APKs firmados para distribución:
+
+1. Crea un keystore de Android
+2. Agrega los siguientes secrets en el repositorio de GitHub:
+   - `ANDROID_KEYSTORE_PATH`: Ruta al keystore (base64 encoded)
+   - `ANDROID_KEYSTORE_PASSWORD`: Contraseña del keystore
+   - `ANDROID_KEY_ALIAS`: Alias de la clave
+   - `ANDROID_KEY_PASSWORD`: Contraseña de la clave
+
+### Instalación del APK
+1. Descarga el APK desde GitHub Actions o Releases
+2. En tu dispositivo Android, habilita **"Instalación de fuentes desconocidas"**
+3. Instala el APK descargado
+4. ¡Disfruta de FitLife Plus!
+
 ## 🤝 Contribución
 
 Como proyecto estudiantil del Politécnico Gran Colombiano, valoramos las contribuciones de la comunidad. Para contribuir:
