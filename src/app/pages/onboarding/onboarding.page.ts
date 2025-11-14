@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, AfterViewInit } from '@angular/core';
 import { IonContent, IonButton, IonInput, IonItem, IonLabel, IonRadioGroup, IonRadio, IonCheckbox, IonIcon } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -13,7 +13,7 @@ import { heart } from 'ionicons/icons';
   selector: 'app-onboarding',
   template: `
     <ion-content fullscreen class="onboarding-bg">
-      <div class="onboarding-container">
+      <div class="onboarding-container" [class.android]="isAndroid()">
         <div class="step-header">
           <p class="step-subtitle">{{ currentStep.subtitle }}</p>
           <h2 class="step-title">{{ currentStep.title }}</h2>
@@ -33,11 +33,19 @@ import { heart } from 'ionicons/icons';
 
           <!-- Paso 1: Datos personales -->
           <div *ngIf="step === 1" class="form-step">
-            <form [formGroup]="personalForm" class="onboarding-form">
+            <form [formGroup]="personalForm" class="onboarding-form" novalidate>
               <div class="field">
                 <ion-label>Nombre <span class="required">*</span></ion-label>
                 <ion-item class="form-field" [class.error]="personalForm.get('name')?.invalid && personalForm.get('name')?.touched">
-                  <ion-input placeholder="Tu nombre" formControlName="name"></ion-input>
+                  <ion-input 
+                    placeholder="Tu nombre" 
+                    formControlName="name"
+                    autocorrect="off"
+                    autocomplete="off"
+                    spellcheck="false"
+                    inputmode="text"
+                    enterkeyhint="next">
+                  </ion-input>
                 </ion-item>
                 <div class="error-message" *ngIf="personalForm.get('name')?.invalid && personalForm.get('name')?.touched">
                   El nombre es obligatorio
@@ -46,7 +54,16 @@ import { heart } from 'ionicons/icons';
               <div class="field">
                 <ion-label>Edad <span class="required">*</span></ion-label>
                 <ion-item class="form-field" [class.error]="personalForm.get('age')?.invalid && personalForm.get('age')?.touched">
-                  <ion-input type="number" placeholder="25" formControlName="age"></ion-input>
+                  <ion-input 
+                    type="number" 
+                    placeholder="25" 
+                    formControlName="age"
+                    autocorrect="off"
+                    autocomplete="off"
+                    spellcheck="false"
+                    inputmode="numeric"
+                    enterkeyhint="next">
+                  </ion-input>
                 </ion-item>
                 <div class="error-message" *ngIf="personalForm.get('age')?.invalid && personalForm.get('age')?.touched">
                   <span *ngIf="personalForm.get('age')?.errors?.['required']">La edad es obligatoria</span>
@@ -57,7 +74,16 @@ import { heart } from 'ionicons/icons';
                 <div class="field">
                   <ion-label>Peso (kg) <span class="required">*</span></ion-label>
                   <ion-item class="form-field" [class.error]="personalForm.get('weight')?.invalid && personalForm.get('weight')?.touched">
-                    <ion-input type="number" placeholder="70" formControlName="weight"></ion-input>
+                    <ion-input 
+                      type="number" 
+                      placeholder="70" 
+                      formControlName="weight"
+                      autocorrect="off"
+                      autocomplete="off"
+                      spellcheck="false"
+                      inputmode="decimal"
+                      enterkeyhint="next">
+                    </ion-input>
                   </ion-item>
                   <div class="error-message" *ngIf="personalForm.get('weight')?.invalid && personalForm.get('weight')?.touched">
                     <span *ngIf="personalForm.get('weight')?.errors?.['required']">El peso es obligatorio</span>
@@ -67,7 +93,16 @@ import { heart } from 'ionicons/icons';
                 <div class="field">
                   <ion-label>Altura (cm) <span class="required">*</span></ion-label>
                   <ion-item class="form-field" [class.error]="personalForm.get('height')?.invalid && personalForm.get('height')?.touched">
-                    <ion-input type="number" placeholder="170" formControlName="height"></ion-input>
+                    <ion-input 
+                      type="number" 
+                      placeholder="170" 
+                      formControlName="height"
+                      autocorrect="off"
+                      autocomplete="off"
+                      spellcheck="false"
+                      inputmode="numeric"
+                      enterkeyhint="done">
+                    </ion-input>
                   </ion-item>
                   <div class="error-message" *ngIf="personalForm.get('height')?.invalid && personalForm.get('height')?.touched">
                     <span *ngIf="personalForm.get('height')?.errors?.['required']">La altura es obligatoria</span>
@@ -148,6 +183,7 @@ import { heart } from 'ionicons/icons';
     }
     .onboarding-bg { --background: #ffffff; }
     .onboarding-container { height: 100vh; display: flex; flex-direction: column; padding: 24px; box-sizing: border-box; }
+    .onboarding-container.android { padding-bottom: env(keyboard-height, 0px); }
     .step-header { margin-bottom: 24px; }
     .step-subtitle { color: var(--gray-500); font-size: 14px; margin-bottom: 8px; }
     .step-title { color: var(--fitlife-green); font-size: 24px; font-weight: 700; }
@@ -160,7 +196,10 @@ import { heart } from 'ionicons/icons';
     .form-step { }
     .onboarding-form { display: flex; flex-direction: column; gap: 16px; }
     .field { display: flex; flex-direction: column; gap: 6px; }
-    .form-field { --background: var(--gray-100); --border-radius: 8px; --padding-start: 12px; --inner-padding-end: 12px; }
+    .form-field { --background: var(--gray-100); --border-radius: 8px; --padding-start: 12px; --inner-padding-end: 12px; --min-height: 48px; }
+    .form-field.error { --border-color: #ef4444; --background: #fef2f2; }
+    .form-field ion-input { --placeholder-color: var(--gray-400); --color: var(--gray-700); font-size: 16px; }
+    .form-field ion-input::part(native) { font-size: 16px; }
     .form-field.error { --border-color: #ef4444; --background: #fef2f2; }
     .required { color: #ef4444; font-weight: 600; }
     .error-message { color: #ef4444; font-size: 12px; margin-top: 4px; }
@@ -177,7 +216,7 @@ import { heart } from 'ionicons/icons';
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
   `],
 })
-export class OnboardingPage {
+export class OnboardingPage implements AfterViewInit {
   step = 0;
   personalForm: FormGroup;
   goal = '';
@@ -206,6 +245,56 @@ export class OnboardingPage {
       weight: ['', [Validators.required, Validators.min(1)]],
       height: ['', [Validators.required, Validators.min(1)]],
     });
+
+    // Workaround for Android input issues
+    this.setupAndroidInputFix();
+  }
+
+  private setupAndroidInputFix() {
+    // This helps with input focus issues on Android
+    if (this.isAndroid()) {
+      // Add a small delay to ensure DOM is ready
+      setTimeout(() => {
+        const inputs = document.querySelectorAll('ion-input');
+        inputs.forEach((input: any) => {
+          if (input) {
+            // Ensure inputs can receive focus
+            input.addEventListener('focus', () => {
+              // Force scroll into view on Android
+              setTimeout(() => {
+                input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 100);
+            });
+          }
+        });
+      }, 500);
+    }
+  }
+
+  isAndroid(): boolean {
+    return /Android/i.test(navigator.userAgent);
+  }
+
+  ngAfterViewInit() {
+    // Additional setup for Android input compatibility
+    if (this.isAndroid()) {
+      // Ensure inputs are properly configured for Android
+      setTimeout(() => {
+        const ionInputs = document.querySelectorAll('ion-input');
+        ionInputs.forEach((input: any) => {
+          if (input && input.shadowRoot) {
+            const nativeInput = input.shadowRoot.querySelector('input');
+            if (nativeInput) {
+              // Force proper input mode for Android
+              nativeInput.setAttribute('inputmode', input.type === 'number' ? 'numeric' : 'text');
+              nativeInput.setAttribute('autocorrect', 'off');
+              nativeInput.setAttribute('autocomplete', 'off');
+              nativeInput.setAttribute('spellcheck', 'false');
+            }
+          }
+        });
+      }, 1000);
+    }
   }
 
   get currentStep() {
