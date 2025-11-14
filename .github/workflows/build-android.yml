@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ master, main ]
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   build-android:
     runs-on: ubuntu-latest
@@ -35,6 +39,13 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
+    - name: Install GitHub CLI
+      run: |
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+        sudo apt update
+        sudo apt install gh
+
     - name: Add Android platform
       run: |
         if [ ! -d "android" ]; then
@@ -53,13 +64,16 @@ jobs:
     - name: Build Android APK (Release)
       run: |
         cd android
-        ./gradlew assembleRelease
+        if [ -n "$ANDROID_KEYSTORE_PATH" ]; then
+          ./gradlew assembleRelease
+        else
+          echo "No keystore configured, skipping release build"
+        fi
       env:
         ANDROID_KEYSTORE_PATH: ${{ secrets.ANDROID_KEYSTORE_PATH }}
         ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-      continue-on-error: true
 
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
@@ -69,36 +83,39 @@ jobs:
         retention-days: 30
 
     - name: Upload Release APK
+      if: env.ANDROID_KEYSTORE_PATH != ''
       uses: actions/upload-artifact@v4
       with:
         name: fitlife-plus-release
         path: android/app/build/outputs/apk/release/app-release.apk
         retention-days: 30
-      continue-on-error: true
 
     - name: Create Release
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: v${{ github.run_number }}-${{ github.run_attempt }}
-        name: Release v${{ github.run_number }}-${{ github.run_attempt }}
-        body: |
-          ## FitLife Plus - Release v${{ github.run_number }}-${{ github.run_attempt }}
+      run: |
+        FILES="android/app/build/outputs/apk/debug/app-debug.apk"
+        if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
+          FILES="$FILES
+        android/app/build/outputs/apk/release/app-release.apk"
+        fi
+        
+        echo "Files to upload: $FILES"
+        
+        gh release create v${{ github.run_number }}-${{ github.run_attempt }} \
+          --title "Release v${{ github.run_number }}-${{ github.run_attempt }}" \
+          --notes "## FitLife Plus - Release v${{ github.run_number }}-${{ github.run_attempt }}
 
-          ### Cambios en esta versión:
-          - Compilación automática desde commit ${{ github.sha }}
+        ### Cambios en esta versión:
+        - Compilación automática desde commit ${{ github.sha }}
 
-          ### Descargas:
-          - [APK Debug](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}-${{ github.run_attempt }}/fitlife-plus-debug.apk)
-          - [APK Release](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}-${{ github.run_attempt }}/fitlife-plus-release.apk) (si está firmado)
+        ### Descargas:
+        - [APK Debug](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}-${{ github.run_attempt }}/fitlife-plus-debug.apk)
+        - [APK Release](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}-${{ github.run_attempt }}/fitlife-plus-release.apk) (si está firmado)
 
-          ### Instalación:
-          1. Descarga el APK
-          2. Habilita "Instalación de fuentes desconocidas" en tu dispositivo Android
-          3. Instala el APK
-        files: |
-          android/app/build/outputs/apk/debug/app-debug.apk
-          android/app/build/outputs/apk/release/app-release.apk
-        fail_on_unmatched_files: false
+        ### Instalación:
+        1. Descarga el APK
+        2. Habilita \"Instalación de fuentes desconocidas\" en tu dispositivo Android
+        3. Instala el APK" \
+          $FILES
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

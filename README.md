@@ -245,18 +245,20 @@ Este proyecto incluye un pipeline automatizado de GitHub Actions que compila aut
 1. **Compilación Automática**: Cada push a `master` o `main` activa el workflow
 2. **Node.js 22**: Usa la versión más reciente compatible con Angular
 3. **Java 21**: Entorno JDK requerido para la compilación de Android
-4. **Construcción del APK**: Se genera tanto la versión Debug como Release
-5. **Artifacts**: Los APKs se suben como artifacts descargables
-6. **Releases**: Se crea automáticamente una release de GitHub con los APKs
+4. **Construcción del APK**: Se genera APK Debug automáticamente
+5. **APK Release Opcional**: Solo si se configura keystore firmado
+6. **Artifacts**: Los APKs se suben como artifacts descargables
+7. **Releases**: Se crea automáticamente una release de GitHub con los APKs
 
 #### Descargar APK
 1. Ve a la pestaña **"Actions"** en el repositorio de GitHub
 2. Selecciona el workflow **"Build Android APK"**
 3. En la ejecución más reciente, ve a **"Artifacts"**
-4. Descarga `fitlife-plus-debug.apk` o `fitlife-plus-release.apk`
+4. Descarga `fitlife-plus-debug.apk` (siempre disponible)
+5. Descarga `fitlife-plus-release.apk` (solo si está configurado el keystore)
 
 #### Releases Automáticas
-Cada push a la rama principal también crea una nueva release en la pestaña **"Releases"** con los APKs adjuntos.
+Cada push a la rama principal también crea una nueva release en la pestaña **"Releases"** con los APKs disponibles (Debug siempre, Release opcional).
 
 #### Configuración de Firma (Opcional)
 Para generar APKs firmados para distribución:
