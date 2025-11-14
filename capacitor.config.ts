@@ -9,6 +9,9 @@ const config: CapacitorConfig = {
       style: 'DARK',
       backgroundColor: '#000000',
       overlaysWebView: true
+    },
+    Keyboard: {
+      resize: 'body'
     }
   },
   android: {

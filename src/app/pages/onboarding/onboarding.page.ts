@@ -1,8 +1,8 @@
 import { Component, AfterViewInit } from '@angular/core';
 import { IonContent, IonButton, IonInput, IonItem, IonLabel, IonRadioGroup, IonRadio, IonCheckbox, IonIcon } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { DatabaseService } from '../../services/database.service';
 import { AuthService } from '../../services/auth.service';
 import { ProgressService } from '../../services/progress.service';
@@ -12,7 +12,7 @@ import { heart } from 'ionicons/icons';
   standalone: true,
   selector: 'app-onboarding',
   template: `
-    <ion-content fullscreen class="onboarding-bg">
+    <ion-content class="onboarding-bg" [scrollY]="true">
       <div class="onboarding-container" [class.android]="isAndroid()">
         <div class="step-header">
           <p class="step-subtitle">{{ currentStep.subtitle }}</p>
@@ -33,65 +33,76 @@ import { heart } from 'ionicons/icons';
 
           <!-- Paso 1: Datos personales -->
           <div *ngIf="step === 1" class="form-step">
-            <form [formGroup]="personalForm" class="onboarding-form" novalidate>
+            <form class="onboarding-form" novalidate>
               <div class="field">
                 <ion-label>Nombre <span class="required">*</span></ion-label>
-                <ion-item class="form-field" [class.error]="personalForm.get('name')?.invalid && personalForm.get('name')?.touched" lines="none">
-                  <ion-input 
-                    placeholder="Tu nombre" 
-                    formControlName="name"
+                <ion-item class="form-field" [class.error]="nameError">
+                  <ion-input
+                    placeholder="Tu nombre"
+                    [(ngModel)]="personalData.name"
+                    name="name"
                     type="text"
-                    clear-input="false">
+                    clear-input="false"
+                    (ionInput)="validateForm()">
                   </ion-input>
                 </ion-item>
-                <div class="error-message" *ngIf="personalForm.get('name')?.invalid && personalForm.get('name')?.touched">
+                <div class="error-message" *ngIf="nameError">
                   El nombre es obligatorio
                 </div>
               </div>
               <div class="field">
                 <ion-label>Edad <span class="required">*</span></ion-label>
-                <ion-item class="form-field" [class.error]="personalForm.get('age')?.invalid && personalForm.get('age')?.touched" lines="none">
-                  <ion-input 
-                    type="number" 
-                    placeholder="25" 
-                    formControlName="age"
-                    clear-input="false">
+                <ion-item class="form-field" [class.error]="ageError">
+                  <ion-input
+                    type="number"
+                    placeholder="25"
+                    [(ngModel)]="personalData.age"
+                    name="age"
+                    inputmode="numeric"
+                    clear-input="false"
+                    (ionInput)="validateForm()">
                   </ion-input>
                 </ion-item>
-                <div class="error-message" *ngIf="personalForm.get('age')?.invalid && personalForm.get('age')?.touched">
-                  <span *ngIf="personalForm.get('age')?.errors?.['required']">La edad es obligatoria</span>
-                  <span *ngIf="personalForm.get('age')?.errors?.['min']">La edad debe ser mayor a 0</span>
+                <div class="error-message" *ngIf="ageError">
+                  <span *ngIf="!personalData.age">La edad es obligatoria</span>
+                  <span *ngIf="personalData.age && personalData.age <= 0">La edad debe ser mayor a 0</span>
                 </div>
               </div>
               <div class="grid-fields">
                 <div class="field">
                   <ion-label>Peso (kg) <span class="required">*</span></ion-label>
-                  <ion-item class="form-field" [class.error]="personalForm.get('weight')?.invalid && personalForm.get('weight')?.touched" lines="none">
-                    <ion-input 
-                      type="number" 
-                      placeholder="70" 
-                      formControlName="weight"
-                      clear-input="false">
+                  <ion-item class="form-field" [class.error]="weightError">
+                    <ion-input
+                      type="number"
+                      placeholder="70"
+                      [(ngModel)]="personalData.weight"
+                      name="weight"
+                      inputmode="numeric"
+                      clear-input="false"
+                      (ionInput)="validateForm()">
                     </ion-input>
                   </ion-item>
-                  <div class="error-message" *ngIf="personalForm.get('weight')?.invalid && personalForm.get('weight')?.touched">
-                    <span *ngIf="personalForm.get('weight')?.errors?.['required']">El peso es obligatorio</span>
-                    <span *ngIf="personalForm.get('weight')?.errors?.['min']">El peso debe ser mayor a 0</span>
+                  <div class="error-message" *ngIf="weightError">
+                    <span *ngIf="!personalData.weight">El peso es obligatorio</span>
+                    <span *ngIf="personalData.weight && personalData.weight <= 0">El peso debe ser mayor a 0</span>
                   </div>
                 </div>
                 <div class="field">
                   <ion-label>Altura (cm) <span class="required">*</span></ion-label>
-                  <ion-item class="form-field" [class.error]="personalForm.get('height')?.invalid && personalForm.get('height')?.touched" lines="none">
-                    <ion-input 
-                      type="number" 
-                      placeholder="170" 
-                      formControlName="height"
-                      clear-input="false">
+                  <ion-item class="form-field" [class.error]="heightError">
+                    <ion-input
+                      type="number"
+                      placeholder="170"
+                      [(ngModel)]="personalData.height"
+                      name="height"
+                      inputmode="numeric"
+                      clear-input="false"
+                      (ionInput)="validateForm()">
                     </ion-input>
                   </ion-item>
-                  <div class="error-message" *ngIf="personalForm.get('height')?.invalid && personalForm.get('height')?.touched">
-                    <span *ngIf="personalForm.get('height')?.errors?.['required']">La altura es obligatoria</span>
-                    <span *ngIf="personalForm.get('height')?.errors?.['min']">La altura debe ser mayor a 0</span>
+                  <div class="error-message" *ngIf="heightError">
+                    <span *ngIf="!personalData.height">La altura es obligatoria</span>
+                    <span *ngIf="personalData.height && personalData.height <= 0">La altura debe ser mayor a 0</span>
                   </div>
                 </div>
               </div>
@@ -102,7 +113,7 @@ import { heart } from 'ionicons/icons';
           <div *ngIf="step === 2" class="form-step">
             <div class="goal-section">
               <p class="goal-instruction">Selecciona tu objetivo principal <span class="required">*</span></p>
-              <ion-radio-group [value]="goal" (ionChange)="goal = $event.detail.value" class="radio-group">
+              <ion-radio-group [value]="goal" (ionChange)="goal = $event.detail.value; validateForm()" class="radio-group">
                 <ion-item class="radio-item" [class.selected]="goal === 'lose'">
                   <ion-radio value="lose" slot="start"></ion-radio>
                   <ion-label>Bajar de peso</ion-label>
@@ -140,12 +151,12 @@ import { heart } from 'ionicons/icons';
           </div>
         </div>
 
-        <div class="step-footer">
+        <div class="step-footer sticky">
           <ion-button
             expand="block"
             (click)="nextStep()"
             class="next-btn"
-            [disabled]="isNextButtonDisabled()">
+            [disabled]="!canProceed">
             {{ getButtonText() }}
             <ion-icon name="arrow-forward" slot="end"></ion-icon>
           </ion-button>
@@ -153,7 +164,7 @@ import { heart } from 'ionicons/icons';
       </div>
     </ion-content>
   `,
-  imports: [IonContent, IonButton, IonInput, IonItem, IonLabel, IonRadioGroup, IonRadio, IonCheckbox, IonIcon, ReactiveFormsModule, CommonModule],
+  imports: [IonContent, IonButton, IonInput, IonItem, IonLabel, IonRadioGroup, IonRadio, IonCheckbox, IonIcon, FormsModule, CommonModule],
   styles: [`
     :host {
       --fitlife-green: #16a34a;
@@ -166,29 +177,34 @@ import { heart } from 'ionicons/icons';
       --border: #e5e7eb;
       --color-accent: rgba(22, 163, 74, 0.1);
     }
-    .onboarding-bg { --background: #ffffff; --keyboard-offset: 0px; }
+    .onboarding-bg { --background: #ffffff; }
     .onboarding-container { 
-      height: 100vh; 
+      min-height: 100vh;
       display: flex; 
       flex-direction: column; 
       padding: 24px; 
+      padding-bottom: 24px;
       box-sizing: border-box;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
     }
-    .onboarding-container.android { padding-bottom: env(keyboard-height, 0px); }
-    .step-header { margin-bottom: 24px; }
+    .step-header { margin-bottom: 24px; flex-shrink: 0; }
     .step-subtitle { color: var(--gray-500); font-size: 14px; margin-bottom: 8px; }
     .step-title { color: var(--fitlife-green); font-size: 24px; font-weight: 700; }
-    .step-content { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .step-content { 
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: center;
+      padding-bottom: 100px;
+    }
     .welcome-step { display: flex; flex-direction: column; align-items: center; gap: 32px; }
     .icon-container { width: 96px; height: 96px; background: var(--color-accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     .welcome-icon { font-size: 56px; color: #000; }
     .app-title { color: var(--fitlife-green); font-size: 28px; font-weight: 700; }
     .welcome-text { color: var(--gray-600); text-align: center; }
-    .form-step { }
+    .form-step { width: 100%; }
     .onboarding-form { display: flex; flex-direction: column; gap: 16px; }
     .field { display: flex; flex-direction: column; gap: 6px; }
+    .grid-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .form-field { 
       --background: var(--gray-100); 
       --border-radius: 8px; 
@@ -196,6 +212,7 @@ import { heart } from 'ionicons/icons';
       --inner-padding-end: 12px; 
       --min-height: 56px;
       --highlight-height: 0;
+      touch-action: manipulation;
     }
     .form-field.error { --border-color: #ef4444; --background: #fef2f2; }
     .form-field ion-input { 
@@ -203,6 +220,7 @@ import { heart } from 'ionicons/icons';
       --color: var(--gray-700); 
       font-size: 16px;
       min-height: 56px;
+      touch-action: manipulation;
     }
     .form-field ion-input::part(native) { 
       font-size: 16px !important;
@@ -211,26 +229,53 @@ import { heart } from 'ionicons/icons';
     }
     .required { color: #ef4444; font-weight: 600; }
     .error-message { color: #ef4444; font-size: 12px; margin-top: 4px; }
-    .goal-section { }
+    .goal-section { width: 100%; }
     .goal-instruction { color: var(--gray-700); font-size: 16px; margin-bottom: 16px; text-align: center; }
+    .radio-group { display: flex; flex-direction: column; gap: 8px; }
+    .radio-item { --background: #fff; --border-width: 1px; --border-style: solid; --border-color: var(--border); border-radius: 8px; margin-bottom: 8px; }
     .radio-item.selected { --background: rgba(22, 163, 74, 0.1); --border-color: var(--fitlife-green); }
-    .next-btn:disabled { --background: var(--gray-400); --color: var(--gray-200); opacity: 0.6; }
+    .checkbox-group { display: flex; flex-direction: column; gap: 8px; }
+    .checkbox-item { --background: #fff; --border-width: 1px; --border-style: solid; --border-color: var(--border); border-radius: 8px; margin-bottom: 8px; }
     .final-step { display: flex; flex-direction: column; align-items: center; gap: 32px; }
     .final-icon { font-size: 48px; color: #000; }
     .final-text { color: var(--gray-600); text-align: center; }
-    .step-footer { margin-top: 24px; }
-    .next-btn { --background: var(--fitlife-green); --color: #ffffff; --border-radius: 8px; }
+    .text-center { text-align: center; }
+    .step-footer.sticky { 
+      position: fixed; 
+      bottom: 0; 
+      left: 0;
+      right: 0;
+      background: #fff; 
+      padding: 16px 24px;
+      padding-bottom: max(24px, env(safe-area-inset-bottom)); 
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+    .next-btn { --background: var(--fitlife-green); --color: #ffffff; --border-radius: 8px; height: 48px; font-weight: 600; }
+    .next-btn:disabled { --background: var(--gray-400); --color: var(--gray-200); opacity: 0.6; }
     .animate-pulse { animation: pulse 2s infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
   `],
 })
 export class OnboardingPage implements AfterViewInit {
   step = 0;
-  personalForm: FormGroup;
+  personalData = {
+    name: '',
+    age: null as number | null,
+    weight: null as number | null,
+    height: null as number | null
+  };
   goal = '';
   selectedPreferences: string[] = [];
   preferencesOptions = ['Vegetariano', 'Vegano', 'Sin gluten', 'Sin lactosa', 'Ninguna restricción'];
   heartIcon = heart;
+
+  // Validation flags
+  nameError = false;
+  ageError = false;
+  weightError = false;
+  heightError = false;
+  canProceed = false;
 
   steps = [
     { title: '¡Bienvenido a FitLife+!', subtitle: 'Tu bienestar comienza aquí' },
@@ -242,17 +287,11 @@ export class OnboardingPage implements AfterViewInit {
 
   constructor(
     private router: Router,
-    private formBuilder: FormBuilder,
     private databaseService: DatabaseService,
     private authService: AuthService,
     private progressService: ProgressService
   ) {
-    this.personalForm = this.formBuilder.group({
-      name: ['', Validators.required],
-      age: ['', [Validators.required, Validators.min(1)]],
-      weight: ['', [Validators.required, Validators.min(1)]],
-      height: ['', [Validators.required, Validators.min(1)]],
-    });
+    this.validateForm(); // Validar el paso inicial
   }
 
   isAndroid(): boolean {
@@ -273,67 +312,51 @@ export class OnboardingPage implements AfterViewInit {
     return 'Siguiente';
   }
 
-  isNextButtonDisabled(): boolean {
-    return !this.canProceedToNextStep();
+  validateForm() {
+    switch (this.step) {
+      case 0:
+        this.canProceed = true;
+        break;
+      case 1:
+        this.nameError = !this.personalData.name || this.personalData.name.trim() === '';
+        this.ageError = !this.personalData.age || this.personalData.age <= 0;
+        this.weightError = !this.personalData.weight || this.personalData.weight <= 0;
+        this.heightError = !this.personalData.height || this.personalData.height <= 0;
+        this.canProceed = !this.nameError && !this.ageError && !this.weightError && !this.heightError;
+        break;
+      case 2:
+        this.canProceed = this.goal !== '';
+        break;
+      case 3:
+        this.canProceed = true;
+        break;
+      case 4:
+        this.canProceed = true;
+        break;
+      default:
+        this.canProceed = false;
+    }
   }
 
   nextStep() {
-    // Validar el paso actual antes de continuar
-    if (!this.canProceedToNextStep()) {
-      return; // No continuar si la validación falla
+    if (!this.canProceed) {
+      return;
     }
 
     if (this.step < this.steps.length - 1) {
       this.step++;
+      this.validateForm();
     } else {
       this.completeOnboarding();
     }
   }
 
-  canProceedToNextStep(): boolean {
-    switch (this.step) {
-      case 0:
-        // Paso de bienvenida - siempre puede continuar
-        return true;
-
-      case 1:
-        // Paso de datos personales - validar formulario
-        if (this.personalForm.invalid) {
-          // Marcar todos los campos como tocados para mostrar errores
-          Object.keys(this.personalForm.controls).forEach(key => {
-            this.personalForm.get(key)?.markAsTouched();
-          });
-          return false;
-        }
-        return true;
-
-      case 2:
-        // Paso de objetivo - debe seleccionar uno
-        if (!this.goal) {
-          return false;
-        }
-        return true;
-
-      case 3:
-        // Paso de preferencias - siempre puede continuar (incluye "ninguna restricción")
-        return true;
-
-      case 4:
-        // Paso final - siempre puede continuar
-        return true;
-
-      default:
-        return false;
-    }
-  }
-
   async completeOnboarding() {
-    const personalData = this.personalForm.value;
     const preferences = this.selectedPreferences;
     const registrationDate = new Date().toISOString();
 
     const userData = {
-      ...personalData,
+      ...this.personalData,
       goal: this.goal,
       preferences,
       onboardingCompleted: true,
@@ -346,7 +369,7 @@ export class OnboardingPage implements AfterViewInit {
     localStorage.setItem('registrationDate', registrationDate);
 
     // Agregar el peso inicial al historial de progreso con la fecha actual
-    const initialWeight = personalData.weight;
+    const initialWeight = this.personalData.weight!;
     const onboardingDate = new Date().toISOString().split('T')[0];
     this.progressService.addWeightEntry(initialWeight, `Peso inicial - ${onboardingDate}`);
 
@@ -356,10 +379,10 @@ export class OnboardingPage implements AfterViewInit {
       try {
         const profileData = {
           user_id: currentUser.id,
-          name: personalData.name,
-          age: personalData.age,
-          height: personalData.height,
-          weight: personalData.weight,
+          name: this.personalData.name,
+          age: this.personalData.age!,
+          height: this.personalData.height!,
+          weight: this.personalData.weight!,
           goal: this.mapGoalToDatabase(this.goal),
           workout_reminder: true,
           meal_reminder: true,
