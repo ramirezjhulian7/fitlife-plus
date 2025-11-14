@@ -570,6 +570,32 @@ export class Tab5Page implements OnInit {
   }
 
   getWorkoutFrequencyText(): string {
+    // Get workout frequency from user-specific localStorage first
+    const userId = this.authService.currentUser?.id;
+    if (userId) {
+      const userDataString = localStorage.getItem(`userData_${userId}`);
+      if (userDataString) {
+        try {
+          const userData = JSON.parse(userDataString);
+          if (userData.workoutFrequency) {
+            const frequencyMap: { [key: number]: string } = {
+              1: '1 vez por semana',
+              2: '2 veces por semana',
+              3: '3 veces por semana',
+              4: '4 veces por semana',
+              5: '5 veces por semana',
+              6: '6 veces por semana',
+              7: 'Todos los días'
+            };
+            return frequencyMap[userData.workoutFrequency] || '3 veces por semana';
+          }
+        } catch (error) {
+          console.error('Error parsing workout frequency:', error);
+        }
+      }
+    }
+
+    // Fallback to profile data
     if (!this.userProfile || !this.userProfile.workout_frequency) return '3 veces por semana';
 
     const frequencyMap: { [key: number]: string } = {
@@ -586,6 +612,29 @@ export class Tab5Page implements OnInit {
   }
 
   getNutritionPreferencesText(): string {
+    // Get nutrition preferences from user-specific localStorage first
+    const userId = this.authService.currentUser?.id;
+    if (userId) {
+      const userDataString = localStorage.getItem(`userData_${userId}`);
+      if (userDataString) {
+        try {
+          const userData = JSON.parse(userDataString);
+          const preferences = userData.preferences || [];
+          
+          if (preferences.length === 0) {
+            return 'Sin preferencias';
+          }
+          if (preferences.length === 1) {
+            return preferences[0];
+          }
+          return `${preferences.length} preferencias`;
+        } catch (error) {
+          console.error('Error parsing nutrition preferences:', error);
+        }
+      }
+    }
+    
+    // Fallback to nutrition data from database
     const nutritionData = this.getNutritionData();
     const preferences = nutritionData.preferences || [];
 

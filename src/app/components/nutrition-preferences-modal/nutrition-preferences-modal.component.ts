@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, ModalController } from '@ionic/angular';
 import { AuthService } from '../../services/auth.service';
+import { DatabaseService } from '../../services/database.service';
 
 @Component({
   selector: 'app-nutrition-preferences-modal',
@@ -23,7 +24,8 @@ export class NutritionPreferencesModalComponent implements OnInit {
 
   constructor(
     private modalController: ModalController,
-    private authService: AuthService
+    private authService: AuthService,
+    private databaseService: DatabaseService
   ) {}
 
   ngOnInit() {
@@ -88,6 +90,16 @@ export class NutritionPreferencesModalComponent implements OnInit {
 
       // Save to localStorage
       localStorage.setItem(`userData_${userId}`, JSON.stringify(updatedData));
+
+      // Update database - store preferences as a string or in an appropriate format
+      // Note: The database may need to store this in a separate table or field
+      const dbResult = await this.databaseService.updateUserProfile(userId, {
+        goal: (userData as any).goal || 'lose_weight' // Keep existing goal, we're just ensuring it's updated
+      });
+
+      if (!dbResult.success) {
+        console.error('Error updating database:', dbResult.message);
+      }
 
       await this.modalController.dismiss({ saved: true, preferences: this.selectedPreferences }, 'saved');
     } catch (error) {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { IonicModule, ModalController } from '@ionic/angular';
 import { AuthService } from '../../services/auth.service';
+import { DatabaseService } from '../../services/database.service';
 
 @Component({
   selector: 'app-workout-preferences-modal',
@@ -26,7 +27,8 @@ export class WorkoutPreferencesModalComponent implements OnInit {
   constructor(
     private formBuilder: FormBuilder,
     private modalController: ModalController,
-    private authService: AuthService
+    private authService: AuthService,
+    private databaseService: DatabaseService
   ) {
     this.preferencesForm = this.formBuilder.group({
       workoutFrequency: [3, [Validators.required, Validators.min(1), Validators.max(7)]]
@@ -79,6 +81,15 @@ export class WorkoutPreferencesModalComponent implements OnInit {
 
         // Save to localStorage
         localStorage.setItem(`userData_${userId}`, JSON.stringify(updatedData));
+
+        // Update database with the new workout frequency
+        const dbResult = await this.databaseService.updateUserProfile(userId, {
+          workout_frequency: workoutFrequency
+        });
+
+        if (!dbResult.success) {
+          console.error('Error updating database:', dbResult.message);
+        }
 
         await this.modalController.dismiss({ saved: true, workoutFrequency }, 'saved');
       } catch (error) {

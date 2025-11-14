@@ -91,17 +91,17 @@
         <ion-item>
           <ion-icon name="notifications" color="primary" slot="start"></ion-icon>
           <ion-label>Recordatorio de entrenamiento</ion-label>
-          <ion-toggle [checked]="workoutReminder" (ionChange)="workoutReminder = $any($event).detail.checked; onReminderChange()" slot="end"></ion-toggle>
+          <ion-checkbox [checked]="workoutReminder" (ionChange)="workoutReminder = $any($event).detail.checked; onReminderChange()" slot="end"></ion-checkbox>
         </ion-item>
         <ion-item>
           <ion-icon name="notifications" color="primary" slot="start"></ion-icon>
           <ion-label>Recordatorio de comidas</ion-label>
-          <ion-toggle [checked]="mealReminder" (ionChange)="mealReminder = $any($event).detail.checked; onReminderChange()" slot="end"></ion-toggle>
+          <ion-checkbox [checked]="mealReminder" (ionChange)="mealReminder = $any($event).detail.checked; onReminderChange()" slot="end"></ion-checkbox>
         </ion-item>
         <ion-item>
           <ion-icon name="notifications" color="primary" slot="start"></ion-icon>
           <ion-label>Recordatorio de hidratación</ion-label>
-          <ion-toggle [checked]="waterReminder" (ionChange)="waterReminder = $any($event).detail.checked; onReminderChange()" slot="end"></ion-toggle>
+          <ion-checkbox [checked]="waterReminder" (ionChange)="waterReminder = $any($event).detail.checked; onReminderChange()" slot="end"></ion-checkbox>
         </ion-item>
       </ion-card>
     </div>

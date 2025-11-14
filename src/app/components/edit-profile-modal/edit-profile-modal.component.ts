@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { IonicModule, ModalController } from '@ionic/angular';
 import { AuthService } from '../../services/auth.service';
+import { DatabaseService } from '../../services/database.service';
 
 @Component({
   selector: 'app-edit-profile-modal',
@@ -22,7 +23,8 @@ export class EditProfileModalComponent implements OnInit {
   constructor(
     private formBuilder: FormBuilder,
     private modalController: ModalController,
-    private authService: AuthService
+    private authService: AuthService,
+    private databaseService: DatabaseService
   ) {
     this.profileForm = this.formBuilder.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
@@ -79,6 +81,18 @@ export class EditProfileModalComponent implements OnInit {
 
         // Save to localStorage
         localStorage.setItem(`userData_${userId}`, JSON.stringify(updatedData));
+
+        // Update database with the new profile data
+        const dbResult = await this.databaseService.updateUserProfile(userId, {
+          name: this.profileForm.value.name,
+          age: this.profileForm.value.age,
+          height: this.profileForm.value.height,
+          goal: this.profileForm.value.goal
+        });
+
+        if (!dbResult.success) {
+          console.error('Error updating database:', dbResult.message);
+        }
 
         // Close modal with success
         await this.modalController.dismiss(updatedData, 'saved');

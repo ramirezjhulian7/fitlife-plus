@@ -152,9 +152,9 @@
   }
 }
 
-// Simple toggle styling - let Ionic handle most styling
-ion-toggle {
+// Simple checkbox styling
+ion-checkbox {
+  --checkmark-color: #ffffff;
   --background-checked: #16a34a;
-  --handle-background-checked: #ffffff;
-  --border-radius: 16px;
+  --border-color: #d1d5db;
 }
