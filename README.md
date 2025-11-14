@@ -96,7 +96,7 @@ src/
 
 ## 📋 Requisitos del Sistema
 
-- **Node.js**: Versión 18.0.0 o superior
+- **Node.js**: Versión 20.19.0 o superior (recomendado 22.12.0 o superior)
 - **npm**: Versión 9.0.0 o superior
 - **Android Studio**: Para desarrollo Android (opcional)
 - **Xcode**: Para desarrollo iOS (opcional)
@@ -242,9 +242,10 @@ Este proyecto incluye un pipeline automatizado de GitHub Actions que compila aut
 
 #### ¿Cómo funciona?
 1. **Compilación Automática**: Cada push a `master` o `main` activa el workflow
-2. **Construcción del APK**: Se genera tanto la versión Debug como Release
-3. **Artifacts**: Los APKs se suben como artifacts descargables
-4. **Releases**: Se crea automáticamente una release de GitHub con los APKs
+2. **Node.js 22**: Usa la versión más reciente compatible con Angular
+3. **Construcción del APK**: Se genera tanto la versión Debug como Release
+4. **Artifacts**: Los APKs se suben como artifacts descargables
+5. **Releases**: Se crea automáticamente una release de GitHub con los APKs
 
 #### Descargar APK
 1. Ve a la pestaña **"Actions"** en el repositorio de GitHub
