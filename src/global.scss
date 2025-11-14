@@ -476,3 +476,77 @@ ion-button, ion-card {
 * {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0.05);
 }
+
+/* Android Safe Area Support */
+/* Handle system bars and notches */
+ion-app {
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height for mobile */
+}
+
+/* Ensure content extends behind system bars */
+ion-content {
+  --padding-top: env(safe-area-inset-top);
+  --padding-bottom: env(safe-area-inset-bottom);
+  --padding-left: env(safe-area-inset-left);
+  --padding-right: env(safe-area-inset-right);
+}
+
+/* Handle keyboard appearance on Android */
+.keyboard-shown ion-content {
+  --padding-bottom: calc(env(safe-area-inset-bottom) + env(keyboard-height, 0px));
+}
+
+/* Full screen layout for Android */
+@media screen and (max-width: 768px) {
+  ion-app {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  body {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  ion-content {
+    height: 100%;
+    position: relative;
+  }
+
+  /* Ensure tabs are visible above navigation bar */
+  ion-tab-bar {
+    --padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Handle notch and status bar */
+  ion-header {
+    --padding-top: env(safe-area-inset-top);
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Android specific adjustments */
+.platform-android {
+  ion-content {
+    --background: var(--background);
+  }
+
+  /* Ensure proper spacing for system navigation */
+  ion-tab-bar {
+    --safe-area-bottom: env(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Handle fullscreen content */
+  .fullscreen-content {
+    height: 100vh;
+    height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}

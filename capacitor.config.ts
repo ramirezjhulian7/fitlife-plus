@@ -10,6 +10,14 @@ const config: CapacitorConfig = {
       backgroundColor: '#000000',
       overlaysWebView: true
     }
+  },
+  android: {
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true,
+    webView: {
+      overScrollMode: 'never'
+    }
   }
 };
 
